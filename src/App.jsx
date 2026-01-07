@@ -5,7 +5,6 @@ import Dashboard from './pages/Dashboard';
 import RequestDemo from './pages/RequestDemo';
 import Login from './pages/Login';
 import ObservationAnalysis from './pages/ObservationAnalysis';
-import './App.css';
 
 function App() {
   return (
