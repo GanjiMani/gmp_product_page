@@ -36,54 +36,85 @@ const CFR_CITATIONS = {
   '211.142': 'Warehousing procedures'
 };
 
-// Generate dummy search results
+// Generate dummy search results - returns only one row per observation
 const generateSearchResults = (observation, programArea, system) => {
   // Simulate finding CFR citations based on keywords
   const keywords = observation.toLowerCase().split(' ');
-  const matchedCFRs = Object.keys(CFR_CITATIONS).filter(cfr => {
+  const allCFRs = Object.keys(CFR_CITATIONS);
+  const matchedCFRs = allCFRs.filter(cfr => {
     const cfrDesc = CFR_CITATIONS[cfr].toLowerCase();
     return keywords.some(keyword => cfrDesc.includes(keyword)) || Math.random() > 0.7;
-  }).slice(0, 3);
-
-  if (matchedCFRs.length === 0) {
-    matchedCFRs.push('211.125', '211.160', '211.165');
-  }
-
-  return matchedCFRs.map((cfr, index) => {
-    const count = Math.floor(Math.random() * 5000) + 100;
-    const totalObservations = 261811;
-    const percentage = ((count / totalObservations) * 100).toFixed(2);
-    
-    // Generate relevant observations
-    const relevantObservations = [
-      `Failure to establish and follow adequate written procedures for ${CFR_CITATIONS[cfr].toLowerCase()} in ${programArea.toLowerCase()} manufacturing.`,
-      `Inadequate documentation and record keeping procedures as required by ${cfr}.`,
-      `Quality control unit failed to review and approve procedures related to ${CFR_CITATIONS[cfr].toLowerCase()}.`,
-      `Missing or incomplete batch records demonstrating compliance with ${cfr} requirements.`,
-      `Insufficient validation data to support procedures under ${cfr}.`
-    ].slice(0, Math.floor(Math.random() * 3) + 2);
-
-    // Generate CAPA recommendations
-    const capaActions = [
-      `Develop and implement comprehensive written procedures for ${CFR_CITATIONS[cfr].toLowerCase()} in accordance with ${cfr}.`,
-      `Conduct gap analysis of current procedures against ${cfr} requirements and document findings.`,
-      `Establish training program for all personnel involved in ${CFR_CITATIONS[cfr].toLowerCase()} activities.`,
-      `Implement robust documentation system to ensure all records meet ${cfr} standards.`,
-      `Conduct internal audit to verify compliance with ${cfr} and document corrective actions.`,
-      `Establish quality metrics and monitoring system to track compliance with ${cfr} requirements.`
-    ].slice(0, Math.floor(Math.random() * 4) + 3);
-
-    return {
-      id: index + 1,
-      userObservation: observation,
-      citationNumber: cfr,
-      citationDescription: CFR_CITATIONS[cfr],
-      count: count,
-      percentage: percentage,
-      relevantObservations: relevantObservations,
-      capaActions: capaActions
-    };
   });
+
+  // Get main citation (highest score)
+  const mainCFR = matchedCFRs.length > 0 ? matchedCFRs[0] : '211.125';
+  const mainCount = Math.floor(Math.random() * 500) + 200;
+  const totalObservations = 261811;
+  const mainPercentage = ((mainCount / totalObservations) * 100).toFixed(1);
+  
+  // Generate relevant citations (top 5 with score less than main citation)
+  const relevantCitations = allCFRs
+    .filter(cfr => cfr !== mainCFR)
+    .map(cfr => ({
+      citation: `21 CFR ${cfr}`,
+      count: Math.floor(Math.random() * (mainCount - 50)) + 10,
+      percentage: (((Math.floor(Math.random() * (mainCount - 50)) + 10) / totalObservations) * 100).toFixed(1)
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Generate relevant observations count
+  const relevantObservationsCount = Math.floor(Math.random() * 50) + 10;
+  
+  // Generate relevant observations list
+  const relevantObservations = [
+    `Strict control is not exercised over labeling issued for use in drug product labeling operations.`,
+    `Failure to establish and follow adequate written procedures for ${CFR_CITATIONS[mainCFR].toLowerCase()} in ${programArea.toLowerCase()} manufacturing.`,
+    `Inadequate documentation and record keeping procedures as required by ${mainCFR}.`,
+    `Quality control unit failed to review and approve procedures related to ${CFR_CITATIONS[mainCFR].toLowerCase()}.`,
+    `Missing or incomplete batch records demonstrating compliance with ${mainCFR} requirements.`,
+    `Insufficient validation data to support procedures under ${mainCFR}.`
+  ];
+
+  // Generate CAPA with structured headings
+  const capaData = {
+    immediateAction: [
+      `Immediately halt all labeling operations until proper controls are established.`,
+      `Conduct immediate audit of all labeling materials currently in use.`,
+      `Implement temporary labeling control measures within 24 hours.`
+    ],
+    probableDirective: [
+      `Establish written procedures for labeling control as per ${mainCFR} requirements.`,
+      `Implement training program for all personnel handling labeling materials.`,
+      `Develop and document labeling issuance and reconciliation procedures.`
+    ],
+    actientive: [
+      `Review and update all labeling procedures to ensure compliance with ${mainCFR}.`,
+      `Conduct risk assessment of current labeling processes.`,
+      `Establish quality metrics for labeling control effectiveness.`
+    ],
+    activenessMonitoring: [
+      `Implement monthly audits of labeling control procedures.`,
+      `Establish tracking system for labeling issuance and reconciliation.`,
+      `Monitor compliance metrics and report quarterly to quality management.`,
+      `Conduct periodic training refreshers for labeling personnel.`
+    ]
+  };
+
+  return [{
+    id: 1,
+    userObservation: observation,
+    citationNumber: `21 CFR ${mainCFR}(a)`,
+    citationLink: `https://www.ecfr.gov/current/title-21/chapter-I/subchapter-C/part-211/subpart-G/section-211.${mainCFR.split('.')[1]}`,
+    citationDescription: CFR_CITATIONS[mainCFR],
+    count: mainCount,
+    percentage: mainPercentage,
+    relevantObservationsCount: relevantObservationsCount,
+    relevantObservations: relevantObservations,
+    relevantCitations: relevantCitations,
+    capaData: capaData,
+    fullDescription: `This observation relates to ${CFR_CITATIONS[mainCFR].toLowerCase()} in the context of ${programArea.toLowerCase()} manufacturing. The issue involves ${observation.toLowerCase()}. This is a common finding in FDA 483 inspections and requires immediate attention to ensure compliance with current Good Manufacturing Practice (cGMP) regulations.`
+  }];
 };
 
 const ObservationAnalysis = () => {
@@ -93,7 +124,8 @@ const ObservationAnalysis = () => {
   const [observation, setObservation] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [expandedRow, setExpandedRow] = useState(null);
+  const [expandedCapa, setExpandedCapa] = useState(null);
+  const [expandedObservations, setExpandedObservations] = useState(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -119,7 +151,8 @@ const ObservationAnalysis = () => {
     setEstablishment('');
     setObservation('');
     setSearchResults(null);
-    setExpandedRow(null);
+    setExpandedCapa(null);
+    setExpandedObservations(null);
   };
 
   const handleExport = () => {
@@ -302,20 +335,26 @@ const ObservationAnalysis = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-blue-400 to-blue-500 text-white">
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
-                      User Entered Observation
+                    <th className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                      Sr. No.
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                      Observation
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                      Citation
+                    </th>
+                    <th className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                      Citation Frequency %, Count
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                      Relevant Observations
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                      Relevant Citations
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
-                      Citation Number (CFR)
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">
-                      Count (2007-2025)
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">
-                      Percentage
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">
-                      Actions
+                      CAPA
                     </th>
                   </tr>
                 </thead>
@@ -324,92 +363,165 @@ const ObservationAnalysis = () => {
                     <>
                       <tr 
                         key={result.id}
-                        className={`hover:bg-blue-50 transition-colors cursor-pointer ${expandedRow === result.id ? 'bg-blue-50' : ''}`}
-                        onClick={() => setExpandedRow(expandedRow === result.id ? null : result.id)}
+                        className="hover:bg-blue-50 transition-colors"
                       >
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 font-medium max-w-md leading-relaxed">
-                            <span className="font-semibold text-gray-700">Observation:</span>
-                            <br />
-                            <span className="text-gray-800">
-                              {result.userObservation.substring(0, 120)}
-                              {result.userObservation.length > 120 && '...'}
-                            </span>
+                        <td className="px-4 py-4 text-center border-r border-gray-200">
+                          <span className="text-sm font-semibold text-gray-700">{result.id}</span>
+                        </td>
+                        <td className="px-6 py-4 border-r border-gray-200">
+                          <div className="text-sm text-gray-900 max-w-md leading-relaxed">
+                            {result.userObservation}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 border-r border-gray-200">
+                          <a 
+                            href={result.citationLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1.5 rounded shadow-md hover:from-blue-600 hover:to-blue-700 transition-colors cursor-pointer"
+                          >
+                            {result.citationNumber}
+                          </a>
+                        </td>
+                        <td className="px-4 py-4 text-center border-r border-gray-200">
+                          <span className="text-sm font-semibold text-gray-700">{result.percentage}%, {result.count}</span>
+                        </td>
+                        <td className="px-6 py-4 border-r border-gray-200">
+                          <div className="flex flex-col space-y-1">
+                            <span className="text-sm text-gray-600">{result.relevantObservationsCount} observations</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedObservations(expandedObservations === result.id ? null : result.id);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 font-semibold text-xs flex items-center space-x-1 hover:underline w-fit"
+                            >
+                              <span>View Details</span>
+                              <span className="text-blue-500">→</span>
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 border-r border-gray-200">
+                          <div className="flex flex-col space-y-1">
+                            {result.relevantCitations.slice(0, 3).map((relCite, idx) => (
+                              <span key={idx} className="text-xs text-gray-700">
+                                {relCite.citation} ({relCite.percentage}%)
+                              </span>
+                            ))}
+                            {result.relevantCitations.length > 3 && (
+                              <span className="text-xs text-gray-500">+{result.relevantCitations.length - 3} more</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex flex-col space-y-2">
-                            <span className="inline-flex items-center justify-center text-sm font-bold text-white bg-gradient-to-r from-blue-400 to-blue-500 px-4 py-2 rounded-lg shadow-md">
-                              {result.citationNumber}
-                            </span>
-                            <div className="text-xs text-gray-600 bg-slate-50 px-3 py-2 rounded border border-slate-200">
-                              {result.citationDescription}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-gray-900">
-                              {result.count.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500 mt-1">occurrences</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex flex-col items-center space-y-2">
-                            <span className="text-2xl font-bold text-gray-700">
-                              {result.percentage}%
-                            </span>
-                            <div className="w-32 bg-gray-200 rounded-full h-3 shadow-inner">
-                              <div
-                                className="bg-gradient-to-r from-blue-400 via-blue-500 to-teal-400 h-3 rounded-full shadow-sm transition-all duration-500"
-                                style={{ width: `${Math.min(parseFloat(result.percentage), 100)}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <button className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                            expandedRow === result.id 
-                              ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                          }`}>
-                            {expandedRow === result.id ? 'Hide Details' : 'View Details'}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedCapa(expandedCapa === result.id ? null : result.id);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center space-x-1 hover:underline"
+                          >
+                            <span>View Details</span>
+                            <span className="text-blue-500">→</span>
                           </button>
                         </td>
                       </tr>
-                      {expandedRow === result.id && (
+                      {/* Expanded Relevant Observations */}
+                      {expandedObservations === result.id && (
                         <tr>
-                          <td colSpan="5" className="px-6 py-6 bg-gray-50">
-                            <div className="grid md:grid-cols-2 gap-6">
-                              {/* Relevant Observations */}
-                              <div className="bg-white p-5 rounded-xl border border-gray-200">
-                                <div className="flex items-center space-x-2 mb-4">
+                          <td colSpan="7" className="px-6 py-6 bg-gray-50">
+                            <div className="bg-white p-5 rounded-xl border border-gray-200">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-2">
                                   <AlertCircle className="w-5 h-5 text-orange-600" />
-                                  <h3 className="font-bold text-gray-900">Relevant Observations (2007-2025)</h3>
+                                  <h3 className="font-bold text-gray-900 text-lg">Relevant Observations</h3>
                                 </div>
-                                <div className="space-y-3 max-h-64 overflow-y-auto">
-                                  {result.relevantObservations.map((obs, idx) => (
-                                    <div key={idx} className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
-                                      <p className="text-sm text-gray-700">{obs}</p>
-                                    </div>
-                                  ))}
-                                </div>
+                                <button 
+                                  onClick={() => setExpandedObservations(null)}
+                                  className="text-gray-500 hover:text-gray-700"
+                                >
+                                  ✕
+                                </button>
                               </div>
-
-                              {/* CAPA Actions */}
-                              <div className="bg-white p-5 rounded-xl border border-gray-200">
-                                <div className="flex items-center space-x-2 mb-4">
+                              <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {result.relevantObservations.map((obs, idx) => (
+                                  <div key={idx} className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                                    <p className="text-sm text-gray-700">{obs}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      {/* Expanded CAPA */}
+                      {expandedCapa === result.id && (
+                        <tr>
+                          <td colSpan="7" className="px-6 py-6 bg-gray-50">
+                            <div className="bg-white p-5 rounded-xl border border-gray-200">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-2">
                                   <CheckCircle className="w-5 h-5 text-green-600" />
-                                  <h3 className="font-bold text-gray-900">Corrective & Preventive Actions (CAPA)</h3>
+                                  <h3 className="font-bold text-gray-900 text-lg">Corrective & Preventive Actions (CAPA)</h3>
                                 </div>
-                                <div className="space-y-3 max-h-64 overflow-y-auto">
-                                  {result.capaActions.map((action, idx) => (
-                                    <div key={idx} className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                      <p className="text-sm text-gray-700">{action}</p>
-                                    </div>
-                                  ))}
+                                <button 
+                                  onClick={() => setExpandedCapa(null)}
+                                  className="text-gray-500 hover:text-gray-700"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <div className="space-y-6">
+                                {/* Immediate Action */}
+                                <div>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Immediate Action</h4>
+                                  <div className="space-y-2">
+                                    {result.capaData.immediateAction.map((action, idx) => (
+                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
+                                        <CheckCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-gray-700">{action}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Probable Directive */}
+                                <div>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Probable Directive</h4>
+                                  <div className="space-y-2">
+                                    {result.capaData.probableDirective.map((action, idx) => (
+                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                                        <CheckCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-gray-700">{action}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Actientive */}
+                                <div>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Actientive</h4>
+                                  <div className="space-y-2">
+                                    {result.capaData.actientive.map((action, idx) => (
+                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                        <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-gray-700">{action}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Activeness Monitoring */}
+                                <div>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Activeness Monitoring</h4>
+                                  <div className="space-y-2">
+                                    {result.capaData.activenessMonitoring.map((action, idx) => (
+                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-gray-700">{action}</p>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -420,28 +532,6 @@ const ObservationAnalysis = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
-
-            {/* Summary Statistics */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-              <div className="flex items-center space-x-2 mb-3">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-gray-900">Search Summary</h3>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Program Area: </span>
-                  <span className="font-semibold text-gray-900">{programArea}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">System: </span>
-                  <span className="font-semibold text-gray-900">{system}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Total CFR Citations Found: </span>
-                  <span className="font-semibold text-blue-600">{searchResults.length}</span>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -456,6 +546,18 @@ const ObservationAnalysis = () => {
             </p>
           </div>
         )}
+
+        {/* Footer */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="text-sm text-gray-600 space-y-2">
+            <p>
+              <span className="font-semibold">*Citation frequency % (Citation count)</span> – calculated based on data between 2007 & 2025.
+            </p>
+            <p>
+              <span className="font-semibold">*Relevant Observations</span> – available observations between 2007 & 2025 from respective citation count.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

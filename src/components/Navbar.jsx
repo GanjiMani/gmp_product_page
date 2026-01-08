@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BarChart3, Calendar, LogIn, Search } from 'lucide-react';
+import { BarChart3, Calendar, Search } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 const Navbar = () => {
@@ -8,18 +8,16 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const navItems = [
-    { path: '/', label: 'Home', icon: Home },
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
     { path: '/observation-analysis', label: 'Analysis', icon: Search },
     { path: '/request-demo', label: 'Request a Demo', icon: Calendar },
-    { path: '/login', label: 'Login', icon: LogIn },
   ];
 
   return (
     <nav className="glass-effect sticky top-0 z-50 border-b border-gray-200/50 backdrop-blur-xl bg-white/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <Link to="/" className="flex items-center space-x-3 group">
+          <Link to="/dashboard" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300 bg-white">
               <img
                 src={logo}
