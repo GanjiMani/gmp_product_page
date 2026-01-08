@@ -5,6 +5,7 @@ import RequestDemo from './pages/RequestDemo';
 import Login from './pages/Login';
 import ObservationAnalysis from './pages/ObservationAnalysis';
 import './App.css';
+<<<<<<< HEAD
 
 function AppContent() {
   return (
@@ -20,6 +21,8 @@ function AppContent() {
     </div>
   );
 }
+=======
+>>>>>>> eb91ceeb79cd6304f870260253980f1b51831f09
 
 function App() {
   return (
