@@ -103,15 +103,19 @@ const Dashboard = () => {
   const establishmentComparison = [highestEstablishment, lowestEstablishment];
 
   // NAI/OAI/VAI pharma data
-  const classificationData = Object.entries(data.classificationCounts || {}).map(([name, value]) => ({
-    name,
-    value
-  }));
+  const classificationData = [
+    { name: 'NAI', value: 210857 },
+    { name: 'VAI', value: 102812 },
+    { name: 'OAI', value: 12533 }
+  ];
 
   // Country data
   const countryData = Object.entries(data.countryCounts || {})
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
+
+  // Fiscal year data
+  const fiscalYearData = data.fiscalYearData || [];
 
   // CFR numbers data
   const cfrData = Object.entries(data.cfrCounts || {})
@@ -124,14 +128,14 @@ const Dashboard = () => {
     count
   }));
 
-  // Get max values for dynamic heights
-  const maxProgramArea = Math.max(...programAreaData.map(d => d.value));
-  const maxSystem = Math.max(...programSystemData.map(d => d.count));
-  const maxEstablishment = Math.max(...establishmentData.map(d => d.value));
-  const maxClassification = Math.max(...classificationData.map(d => d.value));
-  const maxCountry = Math.max(...countryData.map(d => d.value));
-  const maxCFR = Math.max(...cfrData.map(d => d.value));
-  const maxSystemFacility = Math.max(...systemFacilityData.map(d => d.count));
+  // Get max values for dynamic heights (with safety checks)
+  const maxProgramArea = programAreaData.length > 0 ? Math.max(...programAreaData.map(d => d.value)) : 0;
+  const maxSystem = programSystemData.length > 0 ? Math.max(...programSystemData.map(d => d.count)) : 0;
+  const maxEstablishment = establishmentData.length > 0 ? Math.max(...establishmentData.map(d => d.value)) : 0;
+  const maxClassification = classificationData.length > 0 ? Math.max(...classificationData.map(d => d.value)) : 0;
+  const maxCountry = countryData.length > 0 ? Math.max(...countryData.map(d => d.value)) : 0;
+  const maxCFR = cfrData.length > 0 ? Math.max(...cfrData.map(d => d.value)) : 0;
+  const maxSystemFacility = systemFacilityData.length > 0 ? Math.max(...systemFacilityData.map(d => d.count)) : 0;
 
   // Custom tooltip for charts
   const CustomTooltip = ({ active, payload, label }) => {
@@ -525,46 +529,38 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Program Area System Breakdown */}
+        {/* Year-wise Observations */}
         <div className="card mb-10 card-hover">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-gray-900">System-wise Breakdown</h2>
-                <p className="text-gray-500 text-sm mt-1">Observations by cGMP system within program area</p>
+                <h2 className="text-3xl font-bold text-gray-900">Year-wise Observations</h2>
+                <p className="text-gray-500 text-sm mt-1">Fiscal year trends from 2009 to 2026</p>
               </div>
             </div>
-            <select
-              value={selectedProgramArea}
-              onChange={(e) => setSelectedProgramArea(e.target.value)}
-              className="input-field px-5 py-3 font-medium text-gray-700 bg-white border-2 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 cursor-pointer"
-            >
-              {Object.keys(data.programAreaCounts).map(area => (
-                <option key={area} value={area}>{area}</option>
-              ))}
-            </select>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={programSystemData} layout="vertical" margin={{ top: 20, right: 30, left: 150, bottom: 20 }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={fiscalYearData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
-                  type="number" 
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  domain={[0, 'dataMax']}
+                  dataKey="year" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={120}
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
                 />
                 <YAxis 
-                  dataKey="system" 
-                  type="category" 
-                  width={140}
-                  tick={{ fill: '#374151', fontSize: 12, fontWeight: 500 }}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  domain={[0, 'dataMax']}
+                  tickFormatter={(value) => value.toLocaleString()}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" radius={[0, 12, 12, 0]} strokeWidth={2}>
-                  {programSystemData.map((entry, index) => (
+                <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={2}>
+                  {fiscalYearData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
                   ))}
                 </Bar>
@@ -597,7 +593,11 @@ const Dashboard = () => {
                     height={100}
                     tick={{ fill: '#6b7280', fontSize: 10 }}
                   />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis 
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    domain={[0, 'dataMax']}
+                    tickFormatter={(value) => value.toLocaleString()}
+                  />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="warningLetters" radius={[12, 12, 0, 0]} strokeWidth={2} fill={COLORS[4]}>
                     {data.topInvestigators.map((entry, index) => (
@@ -667,254 +667,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* System-wise Breakdown - Year vs System and Facilities */}
-        <div className="card mb-10 card-hover">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">System-wise Comprehensive Breakdown</h2>
-                <p className="text-gray-500 text-sm mt-1">Year-wise trends, system comparisons, and facility analysis</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* System Facility Counts */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Facilities by System</h3>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={systemFacilityData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="system" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={120}
-                    tick={{ fill: '#6b7280', fontSize: 11 }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" radius={[12, 12, 0, 0]} strokeWidth={2}>
-                    {systemFacilityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* System Year-wise Trends */}
-          <div className="grid md:grid-cols-2 gap-8">
-            {Object.entries(data.systemYearFacilityData || {}).slice(0, 4).map(([system, yearData], systemIndex) => (
-              <div key={system} className="chart-container">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">{system}</h3>
-                <ResponsiveContainer width="100%" height={320}>
-                  <ComposedChart data={yearData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis 
-                      dataKey="year" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={80}
-                      tick={{ fill: '#6b7280', fontSize: 10 }}
-                    />
-                    <YAxis yAxisId="left" tick={{ fill: '#6b7280', fontSize: 10 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6b7280', fontSize: 10 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar yAxisId="left" dataKey="observations" fill={COLORS[systemIndex % COLORS.length]} radius={[8, 8, 0, 0]} />
-                    <Line yAxisId="right" type="monotone" dataKey="facilities" stroke={COLORS[(systemIndex + 4) % COLORS.length]} strokeWidth={3} dot={{ r: 4 }} />
-                    <Legend />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* System Trends Over Time */}
-        <div className="card card-hover">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">System-wise Trends (2007-2025)</h2>
-                <p className="text-gray-500 text-sm mt-1">Historical analysis of observations across cGMP systems</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* System Legend - Clear and Organized */}
-          <div className="mb-6 p-5 bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl border-2 border-blue-100">
-            <p className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wide">cGMP Systems Overview</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {Object.keys(data.systemTrends).map((system, index) => {
-                const systemData = systemTrendsData.map(d => d[system]);
-                const total = systemData.reduce((a, b) => a + b, 0);
-                return (
-                  <div
-                    key={system}
-                    className="flex flex-col items-center p-3 bg-white rounded-lg border-2 shadow-sm hover:shadow-md transition-all"
-                    style={{ borderColor: COLORS[index % COLORS.length] }}
-                  >
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div 
-                        className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      ></div>
-                      <span className="text-xs font-bold text-gray-800 text-center leading-tight">
-                        {system.split(' ')[0]}
-                      </span>
-                    </div>
-                    <span className="text-lg font-bold text-gray-900">{total.toLocaleString()}</span>
-                    <span className="text-xs text-gray-500">total</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Main Chart - Enhanced for Clarity */}
-          <div className="chart-container bg-white p-4 rounded-xl">
-              <ResponsiveContainer width="100%" height={320}>
-              <LineChart 
-                data={systemTrendsData} 
-                margin={{ top: 30, right: 40, left: 30, bottom: 80 }}
-              >
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
-                  stroke="#d1d5db" 
-                  vertical={false}
-                  strokeOpacity={0.5}
-                />
-                <XAxis 
-                  dataKey="year" 
-                  tick={{ fill: '#1f2937', fontSize: 14, fontWeight: 600 }}
-                  stroke="#6b7280"
-                  tickLine={{ stroke: '#6b7280', strokeWidth: 2 }}
-                  axisLine={{ stroke: '#6b7280', strokeWidth: 2 }}
-                  interval={0}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  label={{ 
-                    value: 'Year (2007-2025)', 
-                    position: 'insideBottom', 
-                    offset: -10, 
-                    fill: '#374151', 
-                    fontSize: 15, 
-                    fontWeight: 700 
-                  }}
-                />
-                <YAxis 
-                  tick={{ fill: '#1f2937', fontSize: 14, fontWeight: 600 }}
-                  stroke="#6b7280"
-                  tickLine={{ stroke: '#6b7280', strokeWidth: 2 }}
-                  axisLine={{ stroke: '#6b7280', strokeWidth: 2 }}
-                  label={{ 
-                    value: 'Number of Observations', 
-                    angle: -90, 
-                    position: 'insideLeft', 
-                    fill: '#374151', 
-                    fontSize: 15, 
-                    fontWeight: 700,
-                    offset: 10
-                  }}
-                  tickFormatter={(value) => value.toLocaleString()}
-                  domain={[0, 'dataMax']}
-                />
-                <Tooltip 
-                  content={<CustomTooltip />}
-                  cursor={{ stroke: '#9ca3af', strokeWidth: 2, strokeDasharray: '5 5' }}
-                  wrapperStyle={{ outline: 'none' }}
-                />
-                <Legend 
-                  wrapperStyle={{ 
-                    paddingTop: '40px', 
-                    paddingBottom: '30px',
-                    fontSize: '14px',
-                    fontWeight: 600
-                  }}
-                  iconType="line"
-                  iconSize={20}
-                  formatter={(value) => (
-                    <span style={{ 
-                      color: '#1f2937', 
-                      fontWeight: 600,
-                      fontSize: '13px'
-                    }}>
-                      {value}
-                    </span>
-                  )}
-                  layout="horizontal"
-                  verticalAlign="bottom"
-                  align="center"
-                />
-                {Object.keys(data.systemTrends).map((system, index) => (
-                  <Line
-                    key={system}
-                    type="monotone"
-                    dataKey={system}
-                    name={system}
-                    stroke={COLORS[index % COLORS.length]}
-                    strokeWidth={4}
-                    dot={{ 
-                      fill: COLORS[index % COLORS.length], 
-                      r: 5, 
-                      strokeWidth: 3, 
-                      stroke: '#fff',
-                      fillOpacity: 1
-                    }}
-                    activeDot={{ 
-                      r: 8, 
-                      strokeWidth: 3, 
-                      stroke: '#fff',
-                      fill: COLORS[index % COLORS.length]
-                    }}
-                    animationDuration={1500}
-                    connectNulls={false}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Summary Statistics */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {Object.keys(data.systemTrends).map((system, index) => {
-                const systemData = systemTrendsData.map(d => d[system]);
-                const total = systemData.reduce((a, b) => a + b, 0);
-                const avg = Math.round(total / systemData.length);
-                const max = Math.max(...systemData);
-                const maxYear = systemTrendsData.find(d => d[system] === max)?.year;
-                
-                return (
-                  <div key={system} className="p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 hover:border-blue-300 transition-colors shadow-sm">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div 
-                        className="w-3 h-3 rounded-full border border-gray-300"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      ></div>
-                      <p className="text-xs font-semibold text-gray-700 truncate">{system.split(' ')[0]}</p>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{total.toLocaleString()}</p>
-                    <p className="text-xs text-gray-600 mt-1">Total: {total.toLocaleString()} | Avg: {avg.toLocaleString()}/yr</p>
-                    {maxYear && (
-                      <p className="text-xs text-gray-500 mt-1">Peak: {maxYear} ({max.toLocaleString()})</p>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
       </div>
     </div>
   );

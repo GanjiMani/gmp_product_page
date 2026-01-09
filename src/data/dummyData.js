@@ -1,6 +1,6 @@
 // Dummy data generator for FDA 483 Observations
 
-const PROGRAM_AREAS = ['Drugs', 'Food', 'Cosmetics', 'Biologics', 'Medical Devices', 'Veterinary', 'Tobacco'];
+const PROGRAM_AREAS = ['Biologics', 'Bioresearch Monitoring', 'Devices', 'Foods', 'Drugs', 'Human Tissue for Transplantation', 'Part 11 Compliance', 'Parts 1240 and 1250', 'Radiologic Health', 'Veterinary Medicine'];
 const SYSTEMS = ['Quality System', 'Laboratory Control System', 'Material System', 'Packaging and Labeling System', 'Production System', 'Facilities & Equipment System'];
 const ESTABLISHMENT_TYPES = [
   'API Manufacturer',
@@ -12,7 +12,26 @@ const ESTABLISHMENT_TYPES = [
   'Sprout Grower',
   'Human and Veterinarian Drug Manufacturer'
 ];
-const COUNTRIES = ['United States', 'India', 'China', 'Germany', 'Italy', 'France', 'United Kingdom', 'Canada', 'Japan', 'Brazil', 'Mexico', 'Spain', 'South Korea', 'Ireland', 'Switzerland'];
+const COUNTRIES = [
+  'United States', 'Spain', 'Greece', 'Korea (the Republic of)', 'China', 'India', 'Norway', 'Chile', 
+  'Italy', 'Canada', 'Hungary', 'Japan', 'Belgium', 'Netherlands', 'Germany', 'France', 'Singapore', 
+  'United Kingdom', 'Ireland', 'Australia', 'Poland', 'South Africa', 'Taiwan', 'Switzerland', 
+  'Dominican Republic (the)', 'Vietnam', 'Mexico', 'Tunisia', 'Austria', 'Brazil', 'Peru', 'Denmark', 
+  'Croatia', 'Thailand', 'Hong Kong SAR', 'Czech Republic', 'Turkey', 'Bulgaria', 'Ecuador', 'Portugal', 
+  'Philippines', 'Slovenia', 'Armenia', 'Malaysia', 'Sweden', 'Romania', 'Slovakia', 'Argentina', 
+  'Finland', 'New Zealand', 'Iceland', 'Indonesia', 'Luxembourg', 'Lithuania', 'Barbados', 'Panama', 
+  'Fiji', 'Zimbabwe', 'Cambodia', 'Andorra', 'Ghana', 'Estonia', 'Colombia', 'Latvia', 
+  'United Arab Emirates', 'Georgia', 'Costa Rica', 'Malta', 'Kuwait', 'Madagascar', 'Belize', 'Morocco', 
+  'Kazakhstan', 'Sri Lanka', 'Albania', 'Uruguay', 'Macedonia', 'Kenya', 'Monaco', 'Swaziland', 'Serbia', 
+  'Lesotho', 'Mauritius', 'Greenland', 'Malawi', 'Cuba', 'Namibia', 'Saint Lucia', 'Bosnia-Hercegovina', 
+  'St. Vincent & The Grenadines', 'Jamaica', 'Honduras', 'Grenada', 'Trinidad & Tobago', 'Israel', 'Jordan', 
+  'Mozambique', 'Oman', 'Bolivia', 'Bangladesh', 'Seychelles', 'Paraguay', 'Vanuatu', 'Suriname', 'Bahamas', 
+  'Turks and Caicos Islands (the)', 'Guyana', 'Sierra Leone', 'Liberia', 'Guinea', 'Bahrain', 'Nicaragua', 
+  'Cyprus', 'Maldives', 'Egypt', 'Ukraine', 'Congo (Brazzaville)', 'Ivory Coast', 'El Salvador', 'Belarus', 
+  'Nigeria', 'Burma (Myanmar)', 'Faroe Islands', 'Guatemala', 'Western Samoa', 'Benin', 'Tonga', 'Cape Verde', 
+  'Moldova', 'Senegal', 'Marshall Islands', 'Russia', 'Macao', 'Aruba', 'Cayman Islands', 'Liechtenstein', 
+  'French Polynesia', 'Curacao', 'Saudi Arabia', 'Uganda', 'Gibraltar', 'Venezuela', 'Tanzania, United Republic Of'
+];
 const CFR_NUMBERS = ['21 CFR 211', '21 CFR 212', '21 CFR 820', '21 CFR 11', '21 CFR 58', '21 CFR 600', '21 CFR 610', '21 CFR 1271'];
 const INSPECTION_CLASSIFICATIONS = ['NAI', 'OAI', 'VAI'];
 
@@ -120,35 +139,215 @@ export const generateObservations = () => {
 
 // Pre-computed aggregated data for performance
 export const getAggregatedData = () => {
+  // Real program area counts
+  const programAreaCounts = {
+    'Biologics': 4653,
+    'Bioresearch Monitoring': 7361,
+    'Devices': 49917,
+    'Foods': 149147,
+    'Drugs': 39733,
+    'Human Tissue for Transplantation': 4540,
+    'Part 11 Compliance': 232,
+    'Parts 1240 and 1250': 2777,
+    'Radiologic Health': 585,
+    'Veterinary Medicine': 10108
+  };
+
+  // Real country counts
+  const countryCounts = {
+    'United States': 277813,
+    'Spain': 1712,
+    'Greece': 399,
+    'Korea (the Republic of)': 1677,
+    'China': 5558,
+    'India': 4431,
+    'Norway': 234,
+    'Chile': 533,
+    'Italy': 2916,
+    'Canada': 2230,
+    'Hungary': 183,
+    'Japan': 2275,
+    'Belgium': 643,
+    'Netherlands': 745,
+    'Germany': 2852,
+    'France': 2049,
+    'Singapore': 279,
+    'United Kingdom': 1865,
+    'Ireland': 712,
+    'Australia': 420,
+    'Poland': 760,
+    'South Africa': 349,
+    'Taiwan': 1308,
+    'Switzerland': 929,
+    'Dominican Republic (the)': 350,
+    'Vietnam': 686,
+    'Mexico': 1294,
+    'Tunisia': 21,
+    'Austria': 259,
+    'Brazil': 718,
+    'Peru': 483,
+    'Denmark': 412,
+    'Croatia': 94,
+    'Thailand': 1011,
+    'Hong Kong SAR': 104,
+    'Czech Republic': 207,
+    'Turkey': 244,
+    'Bulgaria': 233,
+    'Ecuador': 358,
+    'Portugal': 329,
+    'Philippines': 431,
+    'Slovenia': 69,
+    'Armenia': 59,
+    'Malaysia': 523,
+    'Sweden': 462,
+    'Romania': 142,
+    'Slovakia': 34,
+    'Argentina': 537,
+    'Finland': 146,
+    'New Zealand': 94,
+    'Iceland': 127,
+    'Indonesia': 588,
+    'Luxembourg': 1,
+    'Lithuania': 90,
+    'Barbados': 18,
+    'Panama': 96,
+    'Fiji': 106,
+    'Zimbabwe': 1,
+    'Cambodia': 3,
+    'Andorra': 2,
+    'Ghana': 81,
+    'Estonia': 24,
+    'Colombia': 126,
+    'Latvia': 71,
+    'United Arab Emirates': 48,
+    'Georgia': 43,
+    'Costa Rica': 385,
+    'Malta': 25,
+    'Kuwait': 2,
+    'Madagascar': 47,
+    'Belize': 26,
+    'Morocco': 107,
+    'Kazakhstan': 2,
+    'Sri Lanka': 193,
+    'Albania': 16,
+    'Uruguay': 56,
+    'Macedonia': 43,
+    'Kenya': 16,
+    'Monaco': 7,
+    'Swaziland': 4,
+    'Serbia': 82,
+    'Lesotho': 2,
+    'Mauritius': 14,
+    'Greenland': 1,
+    'Malawi': 8,
+    'Cuba': 7,
+    'Namibia': 4,
+    'Saint Lucia': 5,
+    'Bosnia-Hercegovina': 10,
+    'St. Vincent & The Grenadines': 9,
+    'Jamaica': 190,
+    'Honduras': 21,
+    'Grenada': 16,
+    'Trinidad & Tobago': 79,
+    'Israel': 324,
+    'Jordan': 51,
+    'Mozambique': 5,
+    'Oman': 9,
+    'Bolivia': 34,
+    'Bangladesh': 39,
+    'Seychelles': 3,
+    'Paraguay': 16,
+    'Vanuatu': 1,
+    'Suriname': 25,
+    'Bahamas': 29,
+    'Turks and Caicos Islands (the)': 2,
+    'Guyana': 38,
+    'Sierra Leone': 1,
+    'Liberia': 1,
+    'Guinea': 1,
+    'Bahrain': 2,
+    'Nicaragua': 76,
+    'Cyprus': 32,
+    'Maldives': 15,
+    'Egypt': 9,
+    'Ukraine': 74,
+    'Congo (Brazzaville)': 4,
+    'Ivory Coast': 12,
+    'El Salvador': 28,
+    'Belarus': 5,
+    'Nigeria': 5,
+    'Burma (Myanmar)': 7,
+    'Faroe Islands': 4,
+    'Guatemala': 220,
+    'Western Samoa': 6,
+    'Benin': 2,
+    'Tonga': 2,
+    'Cape Verde': 2,
+    'Moldova': 10,
+    'Senegal': 9,
+    'Marshall Islands': 1,
+    'Russia': 92,
+    'Macao': 11,
+    'Aruba': 1,
+    'Cayman Islands': 1,
+    'Liechtenstein': 2,
+    'French Polynesia': 1,
+    'Curacao': 3,
+    'Saudi Arabia': 1,
+    'Uganda': 1,
+    'Gibraltar': 1,
+    'Venezuela': 7,
+    'Tanzania, United Republic Of': 3
+  };
+
+  // Real fiscal year data
+  const fiscalYearData = [
+    { year: 'Fiscal Year 2009', value: 17605 },
+    { year: 'Fiscal Year 2010', value: 21522 },
+    { year: 'Fiscal Year 2011', value: 25506 },
+    { year: 'Fiscal Year 2012', value: 24785 },
+    { year: 'Fiscal Year 2013', value: 21569 },
+    { year: 'Fiscal Year 2014', value: 20443 },
+    { year: 'Fiscal Year 2015', value: 20451 },
+    { year: 'Fiscal Year 2016', value: 20751 },
+    { year: 'Fiscal Year 2017', value: 21750 },
+    { year: 'Fiscal Year 2018', value: 21653 },
+    { year: 'Fiscal Year 2019', value: 19763 },
+    { year: 'Fiscal Year 2020', value: 9766 },
+    { year: 'Fiscal Year 2021', value: 8371 },
+    { year: 'Fiscal Year 2022', value: 15614 },
+    { year: 'Fiscal Year 2023', value: 18691 },
+    { year: 'Fiscal Year 2024', value: 17021 },
+    { year: 'Fiscal Year 2025', value: 18634 },
+    { year: 'Fiscal Year 2026', value: 2307 }
+  ];
+
+  // NAI, VAI, OAI counts
+  const classificationCounts = {
+    'NAI': 210857,
+    'VAI': 102812,
+    'OAI': 12533
+  };
+
+  // Generate some sample data for other fields
   const data = generateObservations();
   const { observations } = data;
 
-  // Program area counts
-  const programAreaCounts = {};
-  PROGRAM_AREAS.forEach(area => {
-    programAreaCounts[area] = observations.filter(obs => obs.programArea === area).length;
-  });
-
-  // Program area + System counts
+  // Program area + System counts (for compatibility, but won't be used in dashboard)
   const programSystemCounts = {};
   PROGRAM_AREAS.forEach(area => {
     programSystemCounts[area] = {};
     SYSTEMS.forEach(system => {
-      programSystemCounts[area][system] = observations.filter(
-        obs => obs.programArea === area && obs.system === system
-      ).length;
+      programSystemCounts[area][system] = Math.floor(Math.random() * 1000);
     });
   });
 
-  // System trends by year
+  // System trends by year (for compatibility)
   const systemTrends = {};
   SYSTEMS.forEach(system => {
     systemTrends[system] = {};
     for (let year = 2007; year <= 2025; year++) {
-      systemTrends[system][year] = observations.filter(
-        obs => obs.system === system && 
-        obs.inspectionStartDate.getFullYear() === year
-      ).length;
+      systemTrends[system][year] = Math.floor(Math.random() * 5000);
     }
   });
 
@@ -176,25 +375,17 @@ export const getAggregatedData = () => {
         .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
     }));
 
-  // Establishment type counts
-  const establishmentTypeCounts = {};
-  ESTABLISHMENT_TYPES.forEach(type => {
-    establishmentTypeCounts[type] = observations.filter(obs => obs.establishmentType === type).length;
-  });
-
-  // NAI/OAI/VAI counts for pharma
-  const classificationCounts = {};
-  INSPECTION_CLASSIFICATIONS.forEach(classification => {
-    classificationCounts[classification] = observations.filter(
-      obs => obs.classification === classification && obs.programArea === 'Drugs'
-    ).length;
-  });
-
-  // Country-wise observation counts
-  const countryCounts = {};
-  COUNTRIES.forEach(country => {
-    countryCounts[country] = observations.filter(obs => obs.country === country).length;
-  });
+  // Establishment type counts (sample data for highest/lowest)
+  const establishmentTypeCounts = {
+    'Drug Product Manufacturer': 45000,
+    'API Manufacturer': 38000,
+    'Sterile Drug Manufacturer': 25000,
+    'Outsourcing Facility': 15000,
+    'Blood Bank': 8000,
+    'Producer of sterile drugs': 5000,
+    'Human and Veterinarian Drug Manufacturer': 3000,
+    'Sprout Grower': 1000
+  };
 
   // CFR number usage counts
   const cfrCounts = {};
@@ -230,9 +421,9 @@ export const getAggregatedData = () => {
   });
 
   return {
-    totalObservations: observations.length,
+    totalObservations: 269054,
     totalCompanies: data.totalCompanies,
-    totalFacilities: data.totalFacilities,
+    totalFacilities: 115715,
     programAreaCounts,
     programSystemCounts,
     systemTrends,
@@ -241,6 +432,7 @@ export const getAggregatedData = () => {
     establishmentTypeCounts,
     classificationCounts,
     countryCounts,
+    fiscalYearData,
     cfrCounts,
     systemFacilityCounts,
     systemYearFacilityData,

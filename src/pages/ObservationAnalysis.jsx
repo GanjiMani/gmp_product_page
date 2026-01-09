@@ -78,26 +78,32 @@ const generateSearchResults = (observation, programArea, system) => {
 
   // Generate CAPA with structured headings
   const capaData = {
-    immediateAction: [
-      `Immediately halt all labeling operations until proper controls are established.`,
-      `Conduct immediate audit of all labeling materials currently in use.`,
-      `Implement temporary labeling control measures within 24 hours.`
+    immediateActions: [
+      `Initiate immediate cleaning and disinfection of the affected aseptic processing areas and equipment using validated procedures.`,
+      `Restrict access to the aseptic processing areas until cleaning and disinfection are verified as complete.`,
+      `Conduct a visual inspection to confirm that cleaning and disinfection procedures have been executed as per established protocols.`
     ],
-    probableDirective: [
-      `Establish written procedures for labeling control as per ${mainCFR} requirements.`,
-      `Implement training program for all personnel handling labeling materials.`,
-      `Develop and document labeling issuance and reconciliation procedures.`
+    extensiveInvestigation: [
+      `Evaluate the current cleaning and disinfection procedures for adequacy and compliance with established protocols.`,
+      `Review training records of personnel involved in cleaning and disinfection to identify potential gaps in knowledge or execution.`,
+      `Assess the cleaning and disinfection equipment and materials for suitability and effectiveness in achieving aseptic conditions.`,
+      `Investigate historical data for any previous deficiencies or trends related to cleaning and disinfection practices in aseptic areas.`
     ],
-    actientive: [
-      `Review and update all labeling procedures to ensure compliance with ${mainCFR}.`,
-      `Conduct risk assessment of current labeling processes.`,
-      `Establish quality metrics for labeling control effectiveness.`
+    correctiveActions: [
+      `Revise cleaning and disinfection procedures to ensure they meet regulatory requirements and industry best practices.`,
+      `Implement a retraining program for all personnel involved in cleaning and disinfection of aseptic processing areas, emphasizing compliance and proper techniques.`,
+      `Establish a verification process to ensure that cleaning and disinfection are performed as per the revised procedures, including documentation of results.`
     ],
-    activenessMonitoring: [
-      `Implement monthly audits of labeling control procedures.`,
-      `Establish tracking system for labeling issuance and reconciliation.`,
-      `Monitor compliance metrics and report quarterly to quality management.`,
-      `Conduct periodic training refreshers for labeling personnel.`
+    preventiveActions: [
+      `Develop and implement a routine audit schedule for cleaning and disinfection practices in aseptic processing areas to ensure ongoing compliance.`,
+      `Introduce a risk assessment process to evaluate and mitigate potential future deficiencies in cleaning and disinfection practices.`,
+      `Establish a continuous training program for personnel on aseptic processing and cleaning/disinfection protocols, incorporating periodic refresher courses.`
+    ],
+    capaEffectivenessMonitoring: [
+      `Monitor and review cleaning and disinfection records for compliance with revised procedures over a defined period.`,
+      `Conduct quarterly audits of aseptic processing areas to assess adherence to cleaning and disinfection protocols and identify any deviations.`,
+      `Evaluate training effectiveness through assessments and feedback from personnel involved in cleaning and disinfection activities.`,
+      `Report findings and trends to management on a regular basis to ensure ongoing oversight and improvement of aseptic processing conditions.`
     ]
   };
 
@@ -111,7 +117,6 @@ const generateSearchResults = (observation, programArea, system) => {
     percentage: mainPercentage,
     relevantObservationsCount: relevantObservationsCount,
     relevantObservations: relevantObservations,
-    relevantCitations: relevantCitations,
     capaData: capaData,
     fullDescription: `This observation relates to ${CFR_CITATIONS[mainCFR].toLowerCase()} in the context of ${programArea.toLowerCase()} manufacturing. The issue involves ${observation.toLowerCase()}. This is a common finding in FDA 483 inspections and requires immediate attention to ensure compliance with current Good Manufacturing Practice (cGMP) regulations.`
   }];
@@ -348,10 +353,7 @@ const ObservationAnalysis = () => {
                       Citation Frequency %, Count
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
-                      Relevant Observations
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
-                      Relevant Citations
+                      Similar Observations
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
                       CAPA
@@ -401,18 +403,6 @@ const ObservationAnalysis = () => {
                             </button>
                           </div>
                         </td>
-                        <td className="px-6 py-4 border-r border-gray-200">
-                          <div className="flex flex-col space-y-1">
-                            {result.relevantCitations.slice(0, 3).map((relCite, idx) => (
-                              <span key={idx} className="text-xs text-gray-700">
-                                {relCite.citation} ({relCite.percentage}%)
-                              </span>
-                            ))}
-                            {result.relevantCitations.length > 3 && (
-                              <span className="text-xs text-gray-500">+{result.relevantCitations.length - 3} more</span>
-                            )}
-                          </div>
-                        </td>
                         <td className="px-6 py-4">
                           <button 
                             onClick={(e) => {
@@ -426,15 +416,15 @@ const ObservationAnalysis = () => {
                           </button>
                         </td>
                       </tr>
-                      {/* Expanded Relevant Observations */}
+                      {/* Expanded Similar Observations */}
                       {expandedObservations === result.id && (
                         <tr>
-                          <td colSpan="7" className="px-6 py-6 bg-gray-50">
+                          <td colSpan="6" className="px-6 py-6 bg-gray-50">
                             <div className="bg-white p-5 rounded-xl border border-gray-200">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center space-x-2">
                                   <AlertCircle className="w-5 h-5 text-orange-600" />
-                                  <h3 className="font-bold text-gray-900 text-lg">Relevant Observations</h3>
+                                  <h3 className="font-bold text-gray-900 text-lg">Similar Observations</h3>
                                 </div>
                                 <button 
                                   onClick={() => setExpandedObservations(null)}
@@ -457,7 +447,7 @@ const ObservationAnalysis = () => {
                       {/* Expanded CAPA */}
                       {expandedCapa === result.id && (
                         <tr>
-                          <td colSpan="7" className="px-6 py-6 bg-gray-50">
+                          <td colSpan="6" className="px-6 py-6 bg-gray-50">
                             <div className="bg-white p-5 rounded-xl border border-gray-200">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center space-x-2">
@@ -472,11 +462,11 @@ const ObservationAnalysis = () => {
                                 </button>
                               </div>
                               <div className="space-y-6">
-                                {/* Immediate Action */}
+                                {/* Immediate Actions */}
                                 <div>
-                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Immediate Action</h4>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Immediate Actions</h4>
                                   <div className="space-y-2">
-                                    {result.capaData.immediateAction.map((action, idx) => (
+                                    {result.capaData.immediateActions.map((action, idx) => (
                                       <div key={idx} className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
                                         <CheckCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                                         <p className="text-sm text-gray-700">{action}</p>
@@ -485,11 +475,11 @@ const ObservationAnalysis = () => {
                                   </div>
                                 </div>
 
-                                {/* Probable Directive */}
+                                {/* Extensive Investigation - Probable Contributing Factors */}
                                 <div>
-                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Probable Directive</h4>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Extensive Investigation - Probable Contributing Factors</h4>
                                   <div className="space-y-2">
-                                    {result.capaData.probableDirective.map((action, idx) => (
+                                    {result.capaData.extensiveInvestigation.map((action, idx) => (
                                       <div key={idx} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
                                         <CheckCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                                         <p className="text-sm text-gray-700">{action}</p>
@@ -498,11 +488,11 @@ const ObservationAnalysis = () => {
                                   </div>
                                 </div>
 
-                                {/* Actientive */}
+                                {/* Corrective Actions */}
                                 <div>
-                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Actientive</h4>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Corrective Actions</h4>
                                   <div className="space-y-2">
-                                    {result.capaData.actientive.map((action, idx) => (
+                                    {result.capaData.correctiveActions.map((action, idx) => (
                                       <div key={idx} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                                         <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                                         <p className="text-sm text-gray-700">{action}</p>
@@ -511,11 +501,24 @@ const ObservationAnalysis = () => {
                                   </div>
                                 </div>
 
-                                {/* Activeness Monitoring */}
+                                {/* Preventive Actions */}
                                 <div>
-                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Activeness Monitoring</h4>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Preventive Actions</h4>
                                   <div className="space-y-2">
-                                    {result.capaData.activenessMonitoring.map((action, idx) => (
+                                    {result.capaData.preventiveActions.map((action, idx) => (
+                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg border-l-4 border-purple-400">
+                                        <CheckCircle className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-gray-700">{action}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* CAPA Effectiveness Monitoring */}
+                                <div>
+                                  <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">CAPA Effectiveness Monitoring</h4>
+                                  <div className="space-y-2">
+                                    {result.capaData.capaEffectivenessMonitoring.map((action, idx) => (
                                       <div key={idx} className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                                         <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                                         <p className="text-sm text-gray-700">{action}</p>
