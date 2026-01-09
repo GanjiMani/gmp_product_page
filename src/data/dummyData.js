@@ -1,7 +1,7 @@
 // Dummy data generator for FDA 483 Observations
 
 const PROGRAM_AREAS = ['Biologics', 'Bioresearch Monitoring', 'Devices', 'Foods', 'Drugs', 'Human Tissue for Transplantation', 'Part 11 Compliance', 'Parts 1240 and 1250', 'Radiologic Health', 'Veterinary Medicine'];
-const SYSTEMS = ['Quality System', 'Laboratory Control System', 'Material System', 'Packaging and Labeling System', 'Production System', 'Facilities & Equipment System'];
+const SYSTEMS = ['Facility and Equipment', 'Laboratory', 'Material', 'Production', 'Packaging and Labelling', 'Quality System'];
 const ESTABLISHMENT_TYPES = [
   'API Manufacturer',
   'Outsourcing Facility',
@@ -333,14 +333,89 @@ export const getAggregatedData = () => {
   const data = generateObservations();
   const { observations } = data;
 
-  // Program area + System counts (for compatibility, but won't be used in dashboard)
-  const programSystemCounts = {};
-  PROGRAM_AREAS.forEach(area => {
-    programSystemCounts[area] = {};
-    SYSTEMS.forEach(system => {
-      programSystemCounts[area][system] = Math.floor(Math.random() * 1000);
-    });
-  });
+  // Program area + System counts with realistic data
+  const programSystemCounts = {
+    'Biologics': {
+      'Facility and Equipment': 892,
+      'Laboratory': 1245,
+      'Material': 567,
+      'Production': 1089,
+      'Packaging and Labelling': 423,
+      'Quality System': 1437
+    },
+    'Bioresearch Monitoring': {
+      'Facility and Equipment': 1234,
+      'Laboratory': 2156,
+      'Material': 678,
+      'Production': 987,
+      'Packaging and Labelling': 456,
+      'Quality System': 1850
+    },
+    'Devices': {
+      'Facility and Equipment': 8765,
+      'Laboratory': 5432,
+      'Material': 6789,
+      'Production': 9876,
+      'Packaging and Labelling': 4321,
+      'Quality System': 12334
+    },
+    'Foods': {
+      'Facility and Equipment': 23456,
+      'Laboratory': 18765,
+      'Material': 21345,
+      'Production': 34567,
+      'Packaging and Labelling': 19876,
+      'Quality System': 41138
+    },
+    'Drugs': {
+      'Facility and Equipment': 6543,
+      'Laboratory': 8765,
+      'Material': 5432,
+      'Production': 9876,
+      'Packaging and Labelling': 4321,
+      'Quality System': 6796
+    },
+    'Human Tissue for Transplantation': {
+      'Facility and Equipment': 567,
+      'Laboratory': 890,
+      'Material': 234,
+      'Production': 678,
+      'Packaging and Labelling': 345,
+      'Quality System': 1826
+    },
+    'Part 11 Compliance': {
+      'Facility and Equipment': 12,
+      'Laboratory': 34,
+      'Material': 23,
+      'Production': 45,
+      'Packaging and Labelling': 28,
+      'Quality System': 90
+    },
+    'Parts 1240 and 1250': {
+      'Facility and Equipment': 456,
+      'Laboratory': 678,
+      'Material': 234,
+      'Production': 567,
+      'Packaging and Labelling': 345,
+      'Quality System': 497
+    },
+    'Radiologic Health': {
+      'Facility and Equipment': 123,
+      'Laboratory': 89,
+      'Material': 67,
+      'Production': 98,
+      'Packaging and Labelling': 45,
+      'Quality System': 163
+    },
+    'Veterinary Medicine': {
+      'Facility and Equipment': 1234,
+      'Laboratory': 1876,
+      'Material': 987,
+      'Production': 1567,
+      'Packaging and Labelling': 678,
+      'Quality System': 3766
+    }
+  };
 
   // System trends by year (for compatibility)
   const systemTrends = {};

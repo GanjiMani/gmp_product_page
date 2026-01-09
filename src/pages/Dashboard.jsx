@@ -311,6 +311,75 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* System-wise Breakdown by Program Area */}
+        <div className="card mb-10 card-hover">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">System-wise Breakdown by Program Area</h2>
+                <p className="text-gray-500 text-sm mt-1">Observations by system within each program area</p>
+              </div>
+            </div>
+            <select
+              value={selectedProgramArea}
+              onChange={(e) => setSelectedProgramArea(e.target.value)}
+              className="input-field px-5 py-3 font-medium text-gray-700 bg-white border-2 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 cursor-pointer"
+            >
+              {Object.keys(data.programAreaCounts).map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={programSystemData} layout="vertical" margin={{ top: 20, right: 30, left: 150, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  type="number" 
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  domain={[0, 'dataMax']}
+                  tickFormatter={(value) => value.toLocaleString()}
+                />
+                <YAxis 
+                  dataKey="system" 
+                  type="category" 
+                  width={140}
+                  tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" radius={[0, 8, 8, 0]} strokeWidth={2}>
+                  {programSystemData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* System Summary Cards */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {programSystemData.map((system, index) => {
+              const total = programSystemData.reduce((sum, s) => sum + s.count, 0);
+              const percentage = ((system.count / total) * 100).toFixed(1);
+              return (
+                <div key={system.system} className="p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 hover:border-blue-300 transition-colors shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div 
+                      className="w-3 h-3 rounded-full border border-gray-300"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    ></div>
+                    <p className="text-xs font-semibold text-gray-700 truncate">{system.system.split(' ')[0]}</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{system.count.toLocaleString()}</p>
+                  <p className="text-xs text-gray-600 mt-1">{percentage}% of total</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Establishment Type - Highest and Lowest */}
         <div className="card mb-10 card-hover">
           <div className="flex items-center justify-between mb-8">
