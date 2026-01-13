@@ -35,6 +35,12 @@ const COUNTRIES = [
 const CFR_NUMBERS = ['21 CFR 211', '21 CFR 212', '21 CFR 820', '21 CFR 11', '21 CFR 58', '21 CFR 600', '21 CFR 610', '21 CFR 1271'];
 const INSPECTION_CLASSIFICATIONS = ['NAI', 'OAI', 'VAI'];
 
+// Range for dummy FDA media IDs (to construct download URLs similar to real warning letters)
+const FDA_MEDIA_ID_MIN = 190000;
+const FDA_MEDIA_ID_MAX = 191000;
+
+const TREND_YEARS = [2022, 2023, 2024, 2025, 2026];
+
 // Generate dummy company names
 const generateCompanyName = (index) => {
   const prefixes = ['Pharma', 'Bio', 'Med', 'Life', 'Health', 'Care', 'Global', 'National', 'Advanced', 'Innovative'];
@@ -110,8 +116,12 @@ export const generateObservations = () => {
     uniqueFacilities.add(facilityId);
     inspectorCounts[inspectorName]++;
 
+    const inspectionId = `INS${String(i + 1).padStart(7, '0')}`;
+    const shortDescription = `Failure to maintain adequate ${system.toLowerCase()} controls under ${cfrNumber}.`;
+
     observations.push({
       feiNumber,
+      inspectionId,
       inspectorId: inspectorName,
       inspectionStartDate: startDate,
       inspectionEndDate: endDate,
@@ -123,7 +133,8 @@ export const generateObservations = () => {
       country,
       classification,
       cfrNumber,
-      longDescription: `Observation ${i + 1}: Failure to establish and follow adequate procedures for ${system.toLowerCase()} in ${programArea.toLowerCase()} manufacturing. This includes deficiencies in documentation, validation, and quality control measures.`
+      shortDescription,
+      longDescription: `Observation ${i + 1}: Failure to establish and follow adequate procedures for ${system.toLowerCase()} in ${programArea.toLowerCase()} manufacturing under ${cfrNumber}. This includes deficiencies in documentation, validation, and quality control measures.`
     });
   }
 
@@ -139,6 +150,8 @@ export const generateObservations = () => {
 
 // Pre-computed aggregated data for performance
 export const getAggregatedData = () => {
+  const randBetween = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
   // Real program area counts
   const programAreaCounts = {
     'Biologics': 4653,
@@ -333,6 +346,99 @@ export const getAggregatedData = () => {
   const data = generateObservations();
   const { observations } = data;
 
+  // Ensure coverage: every Program Area x System x Trend Year has at least a small set of observations
+  const enrichedObservations = [...observations];
+  let coverageCounter = 0;
+  PROGRAM_AREAS.forEach((programArea, pIdx) => {
+    SYSTEMS.forEach((system, sIdx) => {
+      TREND_YEARS.forEach((year) => {
+        const existing = enrichedObservations.filter(
+          (obs) =>
+            obs.programArea === programArea &&
+            obs.system === system &&
+            obs.inspectionEndDate?.getFullYear() === year
+        ).length;
+        const target = randBetween(15, 40); // random non-constant coverage counts
+        const toAdd = Math.max(0, target - existing);
+        for (let k = 0; k < toAdd; k++) {
+          coverageCounter += 1;
+          const baseDate = new Date(year, randBetween(0, 11), randBetween(1, 28));
+          const endDate = new Date(baseDate);
+          endDate.setDate(endDate.getDate() + randBetween(1, 10));
+          const feiNumber = `FEI-COV-${pIdx}-${sIdx}-${year}-${k}`;
+          const companyName = `Coverage Pharma ${pIdx}-${sIdx}-${k}`;
+          const facilityId = `${companyName}-1`;
+          const cfrNumber = CFR_NUMBERS[randBetween(0, CFR_NUMBERS.length - 1)];
+          const classification = INSPECTION_CLASSIFICATIONS[randBetween(0, INSPECTION_CLASSIFICATIONS.length - 1)];
+          const inspectorName = INSPECTOR_NAMES[randBetween(0, INSPECTOR_NAMES.length - 1)];
+
+          enrichedObservations.push({
+            feiNumber,
+            inspectionId: `INS-COV-${coverageCounter}`,
+            inspectorId: inspectorName,
+            inspectionStartDate: baseDate,
+            inspectionEndDate: endDate,
+            companyName,
+            facilityId,
+            programArea,
+            system,
+            establishmentType: ESTABLISHMENT_TYPES[randBetween(0, ESTABLISHMENT_TYPES.length - 1)],
+            country: COUNTRIES[randBetween(0, COUNTRIES.length - 1)],
+            classification,
+            cfrNumber,
+            shortDescription: `Coverage observation for ${system} under ${cfrNumber}.`,
+            longDescription: `Synthetic coverage observation to ensure sample data for ${programArea} / ${system} in ${year}.`
+          });
+        }
+      });
+    });
+  });
+
+  // Build dummy 483 warning letter records mapped by FEI Number
+  const warningLetters = [];
+  const usedFeiForLetters = new Set();
+  const letterTarget = 1200; // more letters to make data feel populated
+
+  for (let i = 0; i < enrichedObservations.length && warningLetters.length < letterTarget; i++) {
+    const obs = enrichedObservations[i];
+    if (usedFeiForLetters.has(obs.feiNumber)) continue;
+    usedFeiForLetters.add(obs.feiNumber);
+
+    // Only assign letters to some observations (30–70% chance)
+    if (Math.random() < 0.3) continue;
+
+    const recordDate = new Date(obs.inspectionEndDate);
+    const publishDate = new Date(recordDate);
+    publishDate.setDate(publishDate.getDate() + Math.floor(Math.random() * 90) + 7);
+
+    const recordId = `WL-${String(warningLetters.length + 1).padStart(6, '0')}`;
+    const mediaId = Math.floor(
+      FDA_MEDIA_ID_MIN + Math.random() * (FDA_MEDIA_ID_MAX - FDA_MEDIA_ID_MIN + 1)
+    );
+
+    warningLetters.push({
+      recordDate,
+      feiNumber: obs.feiNumber,
+      legalName: obs.companyName,
+      recordType: 'Warning Letter',
+      publishDate,
+      download: `https://www.fda.gov/media/${mediaId}/download`,
+      recordId,
+      inspectionId: obs.inspectionId,
+      inspectionEndDate: obs.inspectionEndDate,
+      programArea: obs.programArea,
+      system: obs.system,
+      actCfrNumber: obs.cfrNumber,
+      shortDescription: obs.shortDescription,
+      longDescription: obs.longDescription
+    });
+
+    // Flag observation as having an associated 483 warning letter
+    // This helps downstream UI map observations and letters on FEI
+    obs.hasWarningLetter = true;
+    obs.warningLetterRecordId = recordId;
+  }
+
   // Program area + System counts with realistic data
   const programSystemCounts = {
     'Biologics': {
@@ -511,7 +617,8 @@ export const getAggregatedData = () => {
     cfrCounts,
     systemFacilityCounts,
     systemYearFacilityData,
-    observations: observations.slice(0, 1000) // Return sample for display
+    observations: enrichedObservations.slice(0, 10000), // Larger sample for display & coverage
+    warningLetters: warningLetters.slice(0, 3000) // More mapped 483 warning letters
   };
 };
 
