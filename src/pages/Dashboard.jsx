@@ -809,11 +809,11 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Professional composed chart for 2022-2026 trend */}
+            {/* Clean professional line chart for 2022-2026 trend */}
             <div className="md:col-span-2">
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height={340}>
-                  <ComposedChart
+                  <LineChart
                     data={trendChartData}
                     margin={{ top: 20, right: 40, left: 10, bottom: 40 }}
                   >
@@ -829,37 +829,27 @@ const Dashboard = () => {
                       tickFormatter={(value) => value.toLocaleString()}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <defs>
-                      <linearGradient id="obsAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={COLORS[0]} stopOpacity={0.4} />
-                        <stop offset="100%" stopColor={COLORS[0]} stopOpacity={0.05} />
-                      </linearGradient>
-                    </defs>
-                    <Area
-                      type="monotone"
-                      dataKey="observations"
-                      name="Observations (Area)"
-                      stroke="none"
-                      fill="url(#obsAreaGradient)"
-                    />
-                    <Bar
-                      dataKey="fda483s"
-                      name="483's Issued (Bars)"
-                      barSize={22}
-                      radius={[6, 6, 0, 0]}
-                      fill={COLORS[3]}
-                    />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Line
                       type="monotone"
                       dataKey="observations"
-                      name="Observations (Line)"
-                      stroke={COLORS[0]}
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
+                      name="Observations"
+                      stroke="#2563EB" // soft blue
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
                     />
-                  </ComposedChart>
+                    <Line
+                      type="monotone"
+                      dataKey="fda483s"
+                      name="483's Issued"
+                      stroke="#10B981" // soft green
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                      strokeDasharray="4 4"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
