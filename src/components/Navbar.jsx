@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, Calendar, Search } from 'lucide-react';
-import logo from '../assets/logo.png';
+import logo from '../assets/fda-image.png';
 
 const Navbar = () => {
   const location = useLocation();
@@ -18,19 +18,13 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <Link to="/dashboard" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300 bg-white">
+            <div className="rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 p-2">
               <img
                 src={logo}
-                alt="CompliSense Logo"
-                className="h-8 w-auto"
+                alt="FDA Logo"
+                style={{ width: '158px', height: '59px' }}
+                className="object-contain"
               />
-            </div>
-
-            <div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                CompliSense
-              </span>
-              <p className="text-xs text-gray-500 -mt-1">cGMP Intelligence Platform</p>
             </div>
           </Link>
           
@@ -43,9 +37,10 @@ const Navbar = () => {
                   to={item.path}
                   className={`relative flex items-center space-x-2 px-5 py-2.5 rounded-xl transition-all duration-300 font-medium ${
                     isActive(item.path)
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/30 scale-105'
+                      ? 'text-white shadow-lg shadow-blue-500/30 scale-105'
                       : 'text-gray-700 hover:bg-gray-100/80 hover:text-blue-600'
                   }`}
+                  style={isActive(item.path) ? { backgroundColor: '#1e82c9' } : {}}
                 >
                   <Icon className={`w-4 h-4 ${isActive(item.path) ? 'text-white' : ''}`} />
                   <span>{item.label}</span>

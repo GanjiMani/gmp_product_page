@@ -171,7 +171,7 @@ const ObservationAnalysis = () => {
         {/* Header */}
         <div className="mb-8 animate-fade-in">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
+            <div className="w-1 h-12 rounded-full" style={{ background: '#1e82c9' }}></div>
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Observation Analysis & CFR Mapping</h1>
               <p className="text-gray-600 text-lg">Enter an observation to find relevant CFR citations, historical patterns, and CAPA recommendations</p>
@@ -182,7 +182,7 @@ const ObservationAnalysis = () => {
         {/* Search Form */}
         <div className="card mb-8 card-hover">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ background: '#1e82c9' }}>
               <Search className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -196,7 +196,7 @@ const ObservationAnalysis = () => {
               {/* Program Area Dropdown */}
               <div>
                 <label htmlFor="programArea" className="block text-sm font-semibold text-gray-700 mb-2">
-                  <Filter className="w-4 h-4 inline mr-2 text-blue-600" />
+                  <Filter className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
                   Program Area *
                 </label>
                 <select
@@ -216,7 +216,7 @@ const ObservationAnalysis = () => {
               {/* System Dropdown */}
               <div>
                 <label htmlFor="system" className="block text-sm font-semibold text-gray-700 mb-2">
-                  <Filter className="w-4 h-4 inline mr-2 text-purple-600" />
+                  <Filter className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
                   System *
                 </label>
                 <select
@@ -238,7 +238,7 @@ const ObservationAnalysis = () => {
                   htmlFor="establishment"
                   className="block text-sm font-semibold text-gray-700 mb-2"
                 >
-                  <Filter className="w-4 h-4 inline mr-2 text-indigo-600" />
+                  <Filter className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
                   Establishment *
                 </label>
                 <select
@@ -261,7 +261,7 @@ const ObservationAnalysis = () => {
             {/* Observation Text Area */}
             <div>
               <label htmlFor="observation" className="block text-sm font-semibold text-gray-700 mb-2">
-                <FileText className="w-4 h-4 inline mr-2 text-indigo-600" />
+                <FileText className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
                 Enter Observation *
               </label>
               <textarea
@@ -339,20 +339,20 @@ const ObservationAnalysis = () => {
             <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-blue-400 to-blue-500 text-white">
-                    <th className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                  <tr style={{ background: '#1e82c9' }} className="text-white">
+                    <th className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider border-r" style={{ borderColor: 'rgba(255,255,255,0.3)' }}>
                       Sr. No.
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r" style={{ borderColor: 'rgba(255,255,255,0.3)' }}>
                       Observation
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r" style={{ borderColor: 'rgba(255,255,255,0.3)' }}>
                       Citation
                     </th>
                     <th className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider border-r border-blue-300">
                       Citation Frequency %, Count
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-blue-300">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r" style={{ borderColor: 'rgba(255,255,255,0.3)' }}>
                       Similar Observations
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
@@ -365,7 +365,10 @@ const ObservationAnalysis = () => {
                     <>
                       <tr 
                         key={result.id}
-                        className="hover:bg-blue-50 transition-colors"
+                        className="transition-colors"
+                        style={{ '--hover-bg': 'rgba(30, 130, 201, 0.1)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(30, 130, 201, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <td className="px-4 py-4 text-center border-r border-gray-200">
                           <span className="text-sm font-semibold text-gray-700">{result.id}</span>
@@ -380,7 +383,10 @@ const ObservationAnalysis = () => {
                             href={result.citationLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1.5 rounded shadow-md hover:from-blue-600 hover:to-blue-700 transition-colors cursor-pointer"
+                            className="inline-flex items-center justify-center text-sm font-bold text-white px-3 py-1.5 rounded shadow-md transition-colors cursor-pointer"
+                            style={{ background: '#1e82c9' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a6fa8'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1e82c9'}
                           >
                             {result.citationNumber}
                           </a>
@@ -396,10 +402,13 @@ const ObservationAnalysis = () => {
                                 e.stopPropagation();
                                 setExpandedObservations(expandedObservations === result.id ? null : result.id);
                               }}
-                              className="text-blue-600 hover:text-blue-800 font-semibold text-xs flex items-center space-x-1 hover:underline w-fit"
+                              className="font-semibold text-xs flex items-center space-x-1 hover:underline w-fit"
+                              style={{ color: '#1e82c9' }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#1a6fa8'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#1e82c9'}
                             >
                               <span>View Details</span>
-                              <span className="text-blue-500">→</span>
+                              <span style={{ color: '#1e82c9' }}>→</span>
                             </button>
                           </div>
                         </td>
@@ -409,10 +418,13 @@ const ObservationAnalysis = () => {
                               e.stopPropagation();
                               setExpandedCapa(expandedCapa === result.id ? null : result.id);
                             }}
-                            className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center space-x-1 hover:underline"
+                            className="font-semibold text-sm flex items-center space-x-1 hover:underline"
+                            style={{ color: '#1e82c9' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#1a6fa8'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#1e82c9'}
                           >
                             <span>View Details</span>
-                            <span className="text-blue-500">→</span>
+                            <span style={{ color: '#1e82c9' }}>→</span>
                           </button>
                         </td>
                       </tr>
@@ -493,8 +505,8 @@ const ObservationAnalysis = () => {
                                   <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Corrective Actions</h4>
                                   <div className="space-y-2">
                                     {result.capaData.correctiveActions.map((action, idx) => (
-                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                                        <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                      <div key={idx} className="flex items-start space-x-3 p-3 rounded-lg border-l-4" style={{ backgroundColor: 'rgba(30, 130, 201, 0.1)', borderColor: '#1e82c9' }}>
+                                        <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#1e82c9' }} />
                                         <p className="text-sm text-gray-700">{action}</p>
                                       </div>
                                     ))}
@@ -506,8 +518,8 @@ const ObservationAnalysis = () => {
                                   <h4 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-300 pb-2">Preventive Actions</h4>
                                   <div className="space-y-2">
                                     {result.capaData.preventiveActions.map((action, idx) => (
-                                      <div key={idx} className="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg border-l-4 border-purple-400">
-                                        <CheckCircle className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                      <div key={idx} className="flex items-start space-x-3 p-3 rounded-lg border-l-4" style={{ backgroundColor: 'rgba(30, 130, 201, 0.1)', borderColor: '#1e82c9' }}>
+                                        <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#1e82c9' }} />
                                         <p className="text-sm text-gray-700">{action}</p>
                                       </div>
                                     ))}

@@ -1,29 +1,37 @@
 import { useEffect, useState } from 'react';
-import { getAggregatedData } from '../data/dummyData';
+import { 
+  fetchTotalObservations, 
+  fetchTotalCitesInspected, 
+  fetchProgramAreaCounts,
+  fetchInspectionClassifications,
+  fetchCountrywiseCounts,
+  fetchTrend483Data,
+  fetchTrend483Observations
+} from '../services/api';
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Area, AreaChart
 } from 'recharts';
-import { Building2, FileText, Users, TrendingUp, Award, Activity, Globe, AlertTriangle, MapPin } from 'lucide-react';
+import { Building2, FileText, Users, TrendingUp, Activity, Globe, AlertTriangle, MapPin } from 'lucide-react';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 
-// Professional color palette for corporate dashboards
+// Dark/Thick color palette for professional dashboards
 const COLORS = [
-  '#2563EB',  // Professional Blue
-  '#059669',  // Professional Green
-  '#7C3AED',  // Professional Purple
-  '#DC2626',  // Professional Red
-  '#EA580C',  // Professional Orange
-  '#0891B2',  // Professional Cyan
-  '#BE185D',  // Professional Pink
-  '#B45309',  // Professional Amber
-  '#1E40AF',  // Deep Blue
-  '#047857',  // Deep Green
-  '#6B21A8',  // Deep Purple
-  '#991B1B',  // Deep Red
-  '#C2410C',  // Deep Orange
-  '#0E7490',  // Deep Cyan
-  '#9F1239'   // Deep Pink
+  '#1E40AF', // Deep Blue
+  '#059669', // Emerald Green
+  '#7C3AED', // Deep Purple
+  '#DC2626', // Deep Red
+  '#D97706', // Amber
+  '#0891B2', // Cyan
+  '#BE185D', // Pink
+  '#B45309', // Orange
+  '#1E3A8A', // Navy Blue
+  '#047857', // Dark Green
+  '#6B21A8', // Dark Purple
+  '#991B1B', // Dark Red
+  '#92400E', // Dark Amber
+  '#0E7490', // Dark Cyan
+  '#9F1239'  // Dark Pink
 ];
 
 // Country coordinates for world map
@@ -47,159 +55,197 @@ const countryCoordinates = {
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+// Mapping from backend field names to display names
+const PROGRAM_AREA_NAME_MAPPING = {
+  'drugs': 'Drugs',
+  'food': 'Foods',
+  'cosmetics': 'Cosmetics',
+  'biologics': 'Biologics',
+  'devices': 'Devices',
+  'bioresearch_monitoring': 'Bioresearch Monitoring',
+  'humantissue_for_transplantation': 'Human Tissue for Transplantation',
+  'radiologic_health': 'Radiologic Health',
+  'veterinary_medicine': 'Veterinary Medicine',
+  'part11_compliance': 'Part 11 Compliance',
+  'part1240andpart1250': 'Parts 1240 and 1250'
+};
+
 const Dashboard = () => {
-  const [data, setData] = useState(null);
+  const [totalObservations, setTotalObservations] = useState(null);
+  const [totalCitesInspected, setTotalCitesInspected] = useState(null);
+  const [programAreaCounts, setProgramAreaCounts] = useState(null);
+  const [inspectionClassifications, setInspectionClassifications] = useState(null);
+  const [countrywiseCounts, setCountrywiseCounts] = useState([]);
+  const [trend483Data, setTrend483Data] = useState([]);
+  const [trend483Observations, setTrend483Observations] = useState([]);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+  const [loadingProgramAreas, setLoadingProgramAreas] = useState(true);
+  const [loadingClassifications, setLoadingClassifications] = useState(true);
+  const [loadingCountrywise, setLoadingCountrywise] = useState(true);
+  const [loadingTrend, setLoadingTrend] = useState(false);
   const [selectedProgramArea, setSelectedProgramArea] = useState('Drugs');
   const [selectedTrendProgramArea, setSelectedTrendProgramArea] = useState('Drugs');
-  const [selectedTrendSystem, setSelectedTrendSystem] = useState('Production');
+  const [selectedTrendSystem, setSelectedTrendSystem] = useState('Production System');
   const [selectedTrendYear, setSelectedTrendYear] = useState(2022);
-  const [selectedCountry, setSelectedCountry] = useState(null);
   const [hoveredCountry, setHoveredCountry] = useState(null);
 
+  // Fetch total observations and total cites inspected from API
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setData(getAggregatedData());
-    }, 500);
+    const fetchMetrics = async () => {
+      try {
+        setLoadingMetrics(true);
+        const [observationsData, citesData] = await Promise.all([
+          fetchTotalObservations(),
+          fetchTotalCitesInspected()
+        ]);
+        setTotalObservations(observationsData.total);
+        setTotalCitesInspected(citesData.total);
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+        setTotalObservations(0);
+        setTotalCitesInspected(0);
+      } finally {
+        setLoadingMetrics(false);
+      }
+    };
+
+    fetchMetrics();
   }, []);
 
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="text-center">
-          <div className="spinner w-16 h-16 mx-auto mb-6"></div>
-          <p className="text-gray-700 text-lg font-medium">Loading dashboard data...</p>
-          <p className="text-gray-500 text-sm mt-2">Preparing comprehensive analytics</p>
-        </div>
-      </div>
-    );
-  }
+  // Fetch program area counts from API
+  useEffect(() => {
+    const fetchProgramAreas = async () => {
+      try {
+        setLoadingProgramAreas(true);
+        const counts = await fetchProgramAreaCounts();
+        
+        // Transform backend field names to display names
+        const transformedCounts = {};
+        Object.keys(counts).forEach(key => {
+          const displayName = PROGRAM_AREA_NAME_MAPPING[key] || key;
+          transformedCounts[displayName] = counts[key];
+        });
+        
+        setProgramAreaCounts(transformedCounts);
+      } catch (error) {
+        console.error('Error fetching program area counts:', error);
+        setProgramAreaCounts(null);
+      } finally {
+        setLoadingProgramAreas(false);
+      }
+    };
+
+    fetchProgramAreas();
+  }, []);
+
+  // Fetch inspection classifications from API
+  useEffect(() => {
+    const fetchClassifications = async () => {
+      try {
+        setLoadingClassifications(true);
+        const data = await fetchInspectionClassifications();
+        setInspectionClassifications(data);
+      } catch (error) {
+        console.error('Error fetching inspection classifications:', error);
+        setInspectionClassifications({ NAI: 0, VAI: 0, OAI: 0 });
+      } finally {
+        setLoadingClassifications(false);
+      }
+    };
+
+    fetchClassifications();
+  }, []);
+
+  // Fetch country-wise counts from API
+  useEffect(() => {
+    const fetchCountrywise = async () => {
+      try {
+        setLoadingCountrywise(true);
+        const data = await fetchCountrywiseCounts();
+        setCountrywiseCounts(data);
+      } catch (error) {
+        console.error('Error fetching country-wise counts:', error);
+        setCountrywiseCounts([]);
+      } finally {
+        setLoadingCountrywise(false);
+      }
+    };
+
+    fetchCountrywise();
+  }, []);
+
+  // Fetch trend 483 data when filters change
+  useEffect(() => {
+    const fetchTrend = async () => {
+      try {
+        setLoadingTrend(true);
+        const data = await fetchTrend483Data(selectedTrendProgramArea, selectedTrendSystem);
+        setTrend483Data(data);
+      } catch (error) {
+        console.error('Error fetching trend 483 data:', error);
+        setTrend483Data([]);
+      } finally {
+        setLoadingTrend(false);
+      }
+    };
+
+    fetchTrend();
+  }, [selectedTrendProgramArea, selectedTrendSystem]);
+
+  // Fetch trend 483 observations when filters change
+  useEffect(() => {
+    const fetchObservations = async () => {
+      try {
+        const data = await fetchTrend483Observations(
+          selectedTrendProgramArea, 
+          selectedTrendSystem, 
+          selectedTrendYear
+        );
+        setTrend483Observations(data);
+      } catch (error) {
+        console.error('Error fetching trend 483 observations:', error);
+        setTrend483Observations([]);
+      }
+    };
+
+    fetchObservations();
+  }, [selectedTrendProgramArea, selectedTrendSystem, selectedTrendYear]);
 
   // Prepare program area chart data
-  const programAreaData = Object.entries(data.programAreaCounts).map(([name, value]) => ({
-    name,
-    value
-  }));
+  const programAreaData = programAreaCounts
+    ? Object.entries(programAreaCounts)
+        .filter(([name, value]) => value > 0)
+        .map(([name, value]) => ({
+          name,
+          value
+        }))
+        .sort((a, b) => b.value - a.value)
+    : [];
 
-  // Prepare system trends data
-  const systemTrendsData = [];
-  for (let year = 2007; year <= 2025; year++) {
-    const yearData = { year };
-    Object.keys(data.systemTrends).forEach(system => {
-      yearData[system] = data.systemTrends[system][year];
-    });
-    systemTrendsData.push(yearData);
-  }
+  // Prepare inspection classification data
+  const classificationData = inspectionClassifications
+    ? [
+        { name: 'NAI', value: inspectionClassifications.NAI || 0 },
+        { name: 'VAI', value: inspectionClassifications.VAI || 0 },
+        { name: 'OAI', value: inspectionClassifications.OAI || 0 }
+      ]
+    : [];
 
-  // Prepare program area system breakdown
-  const programSystemData = Object.entries(data.programSystemCounts[selectedProgramArea] || {}).map(([system, count]) => ({
-    system,
-    count
-  }));
-
-  // Establishment type data (highest and lowest)
-  const establishmentData = Object.entries(data.establishmentTypeCounts || {})
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-  const highestEstablishment = establishmentData[0];
-  const lowestEstablishment = establishmentData[establishmentData.length - 1];
-  const establishmentComparison = [highestEstablishment, lowestEstablishment];
-
-  // NAI/OAI/VAI pharma data
-  const classificationData = [
-    { name: 'NAI', value: 210857 },
-    { name: 'VAI', value: 102812 },
-    { name: 'OAI', value: 12533 }
-  ];
-
-  // Country data
-  const countryData = Object.entries(data.countryCounts || {})
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-
-  // Fiscal year data
-  const fiscalYearData = data.fiscalYearData || [];
-
-  // CFR numbers data
-  const cfrData = Object.entries(data.cfrCounts || {})
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-
-  // System facility counts
-  const systemFacilityData = Object.entries(data.systemFacilityCounts || {}).map(([system, count]) => ({
-    system,
-    count
-  }));
+  // Prepare country data
+  const countryData = countrywiseCounts || [];
 
   // Program Area + System + Year-wise 483/Observation data (2022-2026)
   const TREND_YEARS = [2022, 2023, 2024, 2025, 2026];
-  const allSystems = Object.keys(
-    data.programSystemCounts?.[Object.keys(data.programSystemCounts || {})[0]] || {}
-  );
+  
+  // Get unique systems from trend data
+  const allSystems = Array.from(new Set(
+    trend483Observations.map(obs => obs.system).filter(Boolean)
+  ));
 
-  const baseAggregates = TREND_YEARS.reduce((acc, year) => {
-    acc[year] = { observations: 0, fda483s: 0 };
-    return acc;
-  }, {});
-
-  // Aggregate observations per year for the selected Program Area + System
-  if (Array.isArray(data.observations)) {
-    data.observations.forEach((obs) => {
-      const year = obs.inspectionEndDate?.getFullYear();
-      if (
-        year >= 2022 &&
-        year <= 2025 &&
-        obs.programArea === selectedTrendProgramArea &&
-        obs.system === selectedTrendSystem
-      ) {
-        baseAggregates[year].observations += 1;
-      }
-    });
-  }
-
-  // Aggregate 483 warning letters per year, mapped by FEI for same Program Area + System
-  if (Array.isArray(data.warningLetters)) {
-    data.warningLetters.forEach((wl) => {
-      const year = wl.inspectionEndDate
-        ? new Date(wl.inspectionEndDate).getFullYear()
-        : null;
-      if (
-        year &&
-        year >= 2022 &&
-        year <= 2025 &&
-        wl.programArea === selectedTrendProgramArea &&
-        wl.system === selectedTrendSystem
-      ) {
-        baseAggregates[year].fda483s += 1;
-      }
-    });
-  }
-
-  // If 2026 has no data, softly project based on recent years so the trend is continuous and variable
-  if (baseAggregates[2026].observations === 0) {
-    const refYears = [2023, 2024, 2025];
-    const refObsSum = refYears.reduce(
-      (sum, y) => sum + (baseAggregates[y].observations || 0),
-      0
-    );
-    const refCount = refYears.filter(
-      (y) => baseAggregates[y].observations > 0
-    ).length || 1;
-    const avgObs = refObsSum / refCount;
-    const factor = 0.7 + Math.random() * 0.6; // between 0.7x and 1.3x
-    const projectedObs = Math.max(5, Math.round(avgObs * factor));
-    baseAggregates[2026].observations = projectedObs;
-
-    // Assume 483 letters are a fraction (30–80%) of observations
-    const rate = 0.3 + Math.random() * 0.5;
-    baseAggregates[2026].fda483s = Math.round(projectedObs * rate);
-  }
-
-  const trendChartData = TREND_YEARS.map((year) => ({
-    year,
-    observations: baseAggregates[year].observations,
-    fda483s: baseAggregates[year].fda483s
-  }));
+  // Use trend data from API
+  const trendChartData = trend483Data.length > 0 
+    ? trend483Data 
+    : TREND_YEARS.map(year => ({ year, observations: 0, fda483s: 0 }));
 
   const selectedYearData =
     trendChartData.find((d) => d.year === Number(selectedTrendYear)) || {
@@ -208,8 +254,8 @@ const Dashboard = () => {
       fda483s: 0
     };
 
-  const firstYearData = trendChartData[0];
-  const lastYearData = trendChartData[trendChartData.length - 1];
+  const firstYearData = trendChartData[0] || { observations: 0, fda483s: 0 };
+  const lastYearData = trendChartData[trendChartData.length - 1] || { observations: 0, fda483s: 0 };
   let trendDirection = 'Stable';
   if (lastYearData.observations > firstYearData.observations) {
     trendDirection = 'Increasing';
@@ -217,38 +263,13 @@ const Dashboard = () => {
     trendDirection = 'Decreasing';
   }
 
-  // Map of warning letters keyed by FEI Number for FEI-level mapping
-  const warningByFei = new Map();
-  (data.warningLetters || []).forEach((wl) => {
-    if (!warningByFei.has(wl.feiNumber)) {
-      warningByFei.set(wl.feiNumber, wl);
-    }
-  });
-
-  // Observations & 483 warning letters mapped by FEI for the selected filters
-  const mappedObservationRows = (data.observations || [])
-    .filter((obs) => {
-      const year = obs.inspectionEndDate?.getFullYear();
-      return (
-        obs.programArea === selectedTrendProgramArea &&
-        obs.system === selectedTrendSystem &&
-        year === Number(selectedTrendYear)
-      );
-    })
-    .slice(0, 50)
-    .map((obs) => ({
-      ...obs,
-      warningLetter: warningByFei.get(obs.feiNumber) || null
-    }));
+  // Use observations from API
+  const mappedObservationRows = trend483Observations || [];
 
   // Get max values for dynamic heights (with safety checks)
   const maxProgramArea = programAreaData.length > 0 ? Math.max(...programAreaData.map(d => d.value)) : 0;
-  const maxSystem = programSystemData.length > 0 ? Math.max(...programSystemData.map(d => d.count)) : 0;
-  const maxEstablishment = establishmentData.length > 0 ? Math.max(...establishmentData.map(d => d.value)) : 0;
   const maxClassification = classificationData.length > 0 ? Math.max(...classificationData.map(d => d.value)) : 0;
-  const maxCountry = countryData.length > 0 ? Math.max(...countryData.map(d => d.value)) : 0;
-  const maxCFR = cfrData.length > 0 ? Math.max(...cfrData.map(d => d.value)) : 0;
-  const maxSystemFacility = systemFacilityData.length > 0 ? Math.max(...systemFacilityData.map(d => d.count)) : 0;
+  const maxCountry = countryData.length > 0 ? Math.max(...countryData.map(d => d.count)) : 0;
 
   // Custom tooltip for charts
   const CustomTooltip = ({ active, payload, label }) => {
@@ -308,18 +329,29 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-10 animate-fade-in">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
-            <div>
-              <h1 className="text-5xl font-bold text-gray-900 mb-2 tracking-tight">FDA 483 Observations Trends</h1>
-              <p className="text-gray-600 text-xl">Comprehensive analysis of GMP inspection data (2007-2025)</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* CompliSense Branding - Between Navbar and Content */}
+      <div className="w-full py-6 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="bg-white border-2 border-blue-200 rounded-xl px-8 py-4 shadow-sm">
+          <span className="text-2xl font-bold" style={{ color: '#1e82c9' }}>
+            CompliSense
+          </span>
+          <p className="text-xs text-gray-500 mt-1 text-center">cGMP Intelligence Platform</p>
+        </div>
+      </div>
+
+      <div className="py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-10 animate-fade-in">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
+              <div>
+                <h1 className="text-5xl font-bold text-gray-900 mb-2 tracking-tight">FDA 483 Observations Trends</h1>
+                <p className="text-gray-600 text-xl">Comprehensive analysis of GMP inspection data (2007-2025)</p>
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
@@ -332,7 +364,13 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className="text-gray-700 text-sm font-medium mb-2 uppercase tracking-wider">Total Observations</p>
-              <p className="text-5xl font-bold mb-2 text-gray-900">{data.totalObservations.toLocaleString()}</p>
+              <p className="text-5xl font-bold mb-2 text-gray-900">
+                {loadingMetrics ? (
+                  <span className="text-3xl animate-pulse">Loading...</span>
+                ) : (
+                  (totalObservations ?? 0).toLocaleString()
+                )}
+              </p>
               <div className="flex items-center space-x-2 text-gray-600 text-sm">
                 <span>📊</span>
                 <span>From 2007 to 2025</span>
@@ -349,7 +387,13 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className="text-gray-700 text-sm font-medium mb-2 uppercase tracking-wider">Total Sites/Facilities Inspected</p>
-              <p className="text-5xl font-bold mb-2 text-gray-900">{data.totalFacilities?.toLocaleString() || data.totalCompanies.toLocaleString()}</p>
+              <p className="text-5xl font-bold mb-2 text-gray-900">
+                {loadingMetrics ? (
+                  <span className="text-3xl animate-pulse">Loading...</span>
+                ) : (
+                  (totalCitesInspected ?? 0).toLocaleString()
+                )}
+              </p>
               <div className="flex items-center space-x-2 text-gray-600 text-sm">
                 <span>🏢</span>
                 <span>Unique facilities</span>
@@ -389,9 +433,9 @@ const Dashboard = () => {
                     allowDataOverflow={false}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={1}>
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={2}>
                     {programAreaData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={1} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -411,7 +455,7 @@ const Dashboard = () => {
                     fill="#8884d8"
                     dataKey="value"
                     stroke="#fff"
-                    strokeWidth={1}
+                    strokeWidth={2}
                   >
                     {programAreaData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -424,109 +468,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* System-wise Breakdown by Program Area */}
-        <div className="card mb-10 card-hover">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">System-wise Breakdown by Program Area</h2>
-                <p className="text-gray-500 text-sm mt-1">Observations by system within each program area</p>
-              </div>
-            </div>
-            <select
-              value={selectedProgramArea}
-              onChange={(e) => setSelectedProgramArea(e.target.value)}
-              className="input-field px-5 py-3 font-medium text-gray-700 bg-white border-2 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 cursor-pointer"
-            >
-              {Object.keys(data.programAreaCounts).map(area => (
-                <option key={area} value={area}>{area}</option>
-              ))}
-            </select>
-          </div>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={programSystemData} layout="vertical" margin={{ top: 20, right: 30, left: 150, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  type="number" 
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  domain={[0, 'dataMax']}
-                  tickFormatter={(value) => value.toLocaleString()}
-                />
-                <YAxis 
-                  dataKey="system" 
-                  type="category" 
-                  width={140}
-                  tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" radius={[0, 8, 8, 0]} strokeWidth={2}>
-                  {programSystemData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          {/* System Summary Cards */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {programSystemData.map((system, index) => {
-              const total = programSystemData.reduce((sum, s) => sum + s.count, 0);
-              const percentage = ((system.count / total) * 100).toFixed(1);
-              return (
-                <div key={system.system} className="p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 hover:border-blue-300 transition-colors shadow-sm">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div 
-                      className="w-3 h-3 rounded-full border border-gray-300"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    ></div>
-                    <p className="text-xs font-semibold text-gray-700 truncate">{system.system.split(' ')[0]}</p>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900">{system.count.toLocaleString()}</p>
-                  <p className="text-xs text-gray-600 mt-1">{percentage}% of total</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Establishment Type - Highest and Lowest */}
-        <div className="card mb-10 card-hover">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Establishment Type Analysis</h2>
-                <p className="text-gray-500 text-sm mt-1">Establishment types by observation count</p>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={establishmentData} layout="vertical" margin={{ top: 20, right: 30, left: 150, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 11 }} domain={[0, 'dataMax']} />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    width={140}
-                    tick={{ fill: '#374151', fontSize: 10, fontWeight: 500 }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="value" radius={[0, 8, 8, 0]} strokeWidth={1}>
-                    {establishmentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={1} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-          </div>
-        </div>
 
         {/* NAI/OAI/VAI Pharma Count */}
         <div className="card mb-10 card-hover">
@@ -555,9 +496,9 @@ const Dashboard = () => {
                     domain={[0, 'dataMax']}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={1}>
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={2}>
                     {classificationData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index * 2 + 4]} stroke={COLORS[index * 2 + 4]} strokeWidth={1} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -577,10 +518,10 @@ const Dashboard = () => {
                     fill="#8884d8"
                     dataKey="value"
                     stroke="#fff"
-                    strokeWidth={1}
+                    strokeWidth={2}
                   >
                     {classificationData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index * 2 + 4]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
@@ -602,7 +543,7 @@ const Dashboard = () => {
                 <p className="text-gray-500 text-sm mt-1">Hover over dots on the map to see observation counts</p>
                 {hoveredCountry && (
                   <p className="text-blue-600 font-semibold mt-2">
-                    {hoveredCountry.name}: {hoveredCountry.value.toLocaleString()} observations
+                    {hoveredCountry.name}: {hoveredCountry.count.toLocaleString()} observations
                   </p>
                 )}
               </div>
@@ -632,8 +573,8 @@ const Dashboard = () => {
                   {countryData.map((country, index) => {
                     const coords = countryCoordinates[country.name];
                     if (!coords) return null;
-                    const maxCount = Math.max(...countryData.map(c => c.value));
-                    const size = Math.max(4, (country.value / maxCount) * 12);
+                    const maxCount = Math.max(...countryData.map(c => c.count || 0));
+                    const size = Math.max(4, ((country.count || 0) / maxCount) * 12);
                     return (
                       <Marker
                         key={country.name}
@@ -673,7 +614,7 @@ const Dashboard = () => {
                                   fontWeight: 'bold'
                                 }}
                               >
-                                {country.name}: {country.value.toLocaleString()}
+                                {country.name}: {country.count.toLocaleString()}
                               </text>
                             </g>
                           )}
@@ -700,9 +641,9 @@ const Dashboard = () => {
                     domain={[0, 'dataMax']}
                   />
                   <Tooltip content={<CountryTooltip />} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={1}>
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]} strokeWidth={2}>
                     {countryData.slice(0, 10).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={1} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -731,8 +672,8 @@ const Dashboard = () => {
                 onChange={(e) => setSelectedTrendProgramArea(e.target.value)}
                 className="input-field px-4 py-2 font-medium text-gray-700 bg-white border-2 border-gray-200 focus:border-emerald-400 focus:ring-emerald-400/20 cursor-pointer"
               >
-                {Object.keys(data.programAreaCounts).map((area) => (
-                  <option key={area} value={area}>{area}</option>
+                {programAreaData.map((area) => (
+                  <option key={area.name} value={area.name}>{area.name}</option>
                 ))}
               </select>
               <select
@@ -740,9 +681,11 @@ const Dashboard = () => {
                 onChange={(e) => setSelectedTrendSystem(e.target.value)}
                 className="input-field px-4 py-2 font-medium text-gray-700 bg-white border-2 border-gray-200 focus:border-emerald-400 focus:ring-emerald-400/20 cursor-pointer"
               >
-                {allSystems.map((system) => (
+                {allSystems.length > 0 ? allSystems.map((system) => (
                   <option key={system} value={system}>{system}</option>
-                ))}
+                )) : (
+                  <option value="Production System">Production System</option>
+                )}
               </select>
               <select
                 value={selectedTrendYear}
@@ -834,19 +777,19 @@ const Dashboard = () => {
                       type="monotone"
                       dataKey="observations"
                       name="Observations"
-                      stroke="#2563EB" // soft blue
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
+                      stroke={COLORS[0]}
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
                     />
                     <Line
                       type="monotone"
                       dataKey="fda483s"
                       name="483's Issued"
-                      stroke="#10B981" // soft green
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
+                      stroke={COLORS[1]}
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
                       strokeDasharray="4 4"
                     />
                   </LineChart>
@@ -895,17 +838,17 @@ const Dashboard = () => {
                 {mappedObservationRows.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-4 py-6 text-center text-gray-500 text-sm">
-                      No dummy records found for the selected combination. Try a different year, program area, or system.
+                      No records found for the selected combination. Try a different year, program area, or system.
                     </td>
                   </tr>
                 )}
                 {mappedObservationRows.map((row, index) => (
-                  <tr key={`${row.feiNumber}-${index}`} className="hover:bg-blue-50/40 transition-colors">
+                  <tr key={`${row.inspectionId || row.feiNumber}-${index}`} className="hover:bg-blue-50/40 transition-colors">
                     <td className="px-4 py-2 whitespace-nowrap font-mono text-xs text-gray-900">
                       {row.feiNumber}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-gray-800">
-                      {row.companyName}
+                      {row.companyName || row.LegalName || '—'}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-gray-700">
                       {row.programArea}
@@ -919,10 +862,10 @@ const Dashboard = () => {
                         : '—'}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                      {row.cfrNumber}
+                      {row.cfrNumber || row.ActCFRNumber || '—'}
                     </td>
                     <td className="px-4 py-2 text-gray-700 max-w-xs">
-                      <div className="line-clamp-2">{row.shortDescription}</div>
+                      <div className="line-clamp-2">{row.shortDescription || '—'}</div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       {row.warningLetter ? (
@@ -930,29 +873,25 @@ const Dashboard = () => {
                           <span className="font-semibold text-emerald-700">
                             {row.warningLetter.recordId}
                           </span>
-                          <a
-                            href={row.warningLetter.download}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline mb-1"
-                          >
-                            View 483 Letter
-                          </a>
-                          <span>
-                            Record Date:{' '}
-                            {row.warningLetter.recordDate
-                              ? new Date(row.warningLetter.recordDate).toLocaleDateString()
-                              : '—'}
-                          </span>
-                          <span>
-                            Publish Date:{' '}
-                            {row.warningLetter.publishDate
-                              ? new Date(row.warningLetter.publishDate).toLocaleDateString()
-                              : '—'}
-                          </span>
+                          {row.warningLetter.download && (
+                            <a
+                              href={row.warningLetter.download}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline mb-1"
+                            >
+                              View 483 Letter
+                            </a>
+                          )}
+                          {row.warningLetter.recordDate && (
+                            <span>
+                              Record Date:{' '}
+                              {new Date(row.warningLetter.recordDate).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">No 483 mapped (dummy)</span>
+                        <span className="text-xs text-gray-400">No 483 mapped</span>
                       )}
                     </td>
                   </tr>
@@ -961,145 +900,7 @@ const Dashboard = () => {
             </table>
           </div>
         </div>
-
-        {/* Year-wise Observations */}
-        <div className="card mb-10 card-hover">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Year-wise Observations</h2>
-                <p className="text-gray-500 text-sm mt-1">Fiscal year trends from 2009 to 2026</p>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={fiscalYearData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="year" 
-                  angle={-45} 
-                  textAnchor="end" 
-                  height={120}
-                  tick={{ fill: '#6b7280', fontSize: 11 }}
-                />
-                <YAxis 
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  domain={[0, 'dataMax']}
-                  tickFormatter={(value) => value.toLocaleString()}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]} strokeWidth={2}>
-                  {fiscalYearData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Top Investigators with Warning Letters and CFR Numbers */}
-        <div className="card mb-10 card-hover">
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Top 10 Investigators</h2>
-              <p className="text-gray-500 text-sm mt-1">Most active FDA inspectors with warning letters and CFR usage</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
-            <div className="chart-container">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Warning Letters Issued</h3>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={data.topInvestigators} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={100}
-                    tick={{ fill: '#6b7280', fontSize: 10 }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    domain={[0, 'dataMax']}
-                    tickFormatter={(value) => value.toLocaleString()}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="warningLetters" radius={[12, 12, 0, 0]} strokeWidth={2} fill={COLORS[4]}>
-                    {data.topInvestigators.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[4]} stroke={COLORS[4]} strokeWidth={2} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="chart-container">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Most Used CFR Numbers</h3>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={cfrData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={80}
-                    tick={{ fill: '#6b7280', fontSize: 11 }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="value" radius={[12, 12, 0, 0]} strokeWidth={2}>
-                    {cfrData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {data.topInvestigators.map((investigator, index) => (
-              <div 
-                key={investigator.name} 
-                className="flex items-center space-x-4 p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 hover:border-slate-300 hover:shadow-md transition-all duration-300 group"
-              >
-                <div className={`flex items-center justify-center w-12 h-12 rounded-xl font-bold text-white shadow-lg transition-transform duration-300 group-hover:scale-110 ${
-                  index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-500' :
-                  index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-500' :
-                  index === 2 ? 'bg-gradient-to-br from-gray-500 to-gray-600' :
-                  'bg-gradient-to-br from-blue-400 to-blue-500'
-                }`}>
-                  {index < 3 ? '🏆' : index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-lg">{investigator.name}</p>
-                  <p className="text-gray-500 text-sm">FDA Inspector | Warning Letters: {investigator.warningLetters} | Top CFR: {investigator.topCFR}</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-64 bg-gray-200 rounded-full h-5 overflow-hidden shadow-inner">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-blue-400 via-blue-500 to-teal-400 shadow-lg"
-                      style={{ width: `${(investigator.count / data.topInvestigators[0].count) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-xl font-bold text-gray-900 w-24 text-right">
-                    {investigator.count.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      </div>
       </div>
     </div>
   );

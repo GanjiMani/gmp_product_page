@@ -52,12 +52,16 @@
   
   .btn-primary {
     @apply px-6 py-3 rounded-xl font-semibold text-white;
-    @apply bg-gradient-to-r from-blue-600 to-purple-600;
-    @apply shadow-lg shadow-blue-500/50;
     @apply transition-all duration-300 ease-out;
-    @apply hover:shadow-xl hover:shadow-blue-500/60;
     @apply hover:-translate-y-0.5;
     @apply active:translate-y-0;
+    background-color: #1e82c9 !important;
+    box-shadow: 0 10px 15px -3px rgba(30, 130, 201, 0.3), 0 4px 6px -2px rgba(30, 130, 201, 0.2);
+  }
+  
+  .btn-primary:hover {
+    background-color: #1a6fa8 !important;
+    box-shadow: 0 20px 25px -5px rgba(30, 130, 201, 0.4), 0 10px 10px -5px rgba(30, 130, 201, 0.2);
   }
   
   .btn-secondary {

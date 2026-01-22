@@ -53,7 +53,10 @@ const RequestDemo = () => {
                   preferredDate: ''
                 });
               }}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              style={{ background: '#1e82c9' }}
+              className="text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a6fa8'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1e82c9'}
             >
               Submit Another Request
             </button>
@@ -69,7 +72,7 @@ const RequestDemo = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: '#1e82c9' }}>
               <Calendar className="w-8 h-8 text-white" />
             </div>
           </div>
@@ -82,8 +85,8 @@ const RequestDemo = () => {
 
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           <div className="card text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(30, 130, 201, 0.1)' }}>
+              <User className="w-6 h-6" style={{ color: '#1e82c9' }} />
             </div>
             <h3 className="font-bold text-gray-800 mb-2">Personalized Walkthrough</h3>
             <p className="text-gray-600 text-sm">
@@ -92,8 +95,8 @@ const RequestDemo = () => {
           </div>
 
           <div className="card text-center">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Building className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(30, 130, 201, 0.1)' }}>
+              <Building className="w-6 h-6" style={{ color: '#1e82c9' }} />
             </div>
             <h3 className="font-bold text-gray-800 mb-2">Expert Consultation</h3>
             <p className="text-gray-600 text-sm">
@@ -102,8 +105,8 @@ const RequestDemo = () => {
           </div>
 
           <div className="card text-center">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-6 h-6 text-indigo-600" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(30, 130, 201, 0.1)' }}>
+              <CheckCircle className="w-6 h-6" style={{ color: '#1e82c9' }} />
             </div>
             <h3 className="font-bold text-gray-800 mb-2">Q&A Session</h3>
             <p className="text-gray-600 text-sm">
@@ -118,7 +121,7 @@ const RequestDemo = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
               <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-2 text-blue-600" />
+                <User className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
                 Full Name *
               </label>
               <input
@@ -135,7 +138,7 @@ const RequestDemo = () => {
 
               <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                <Mail className="w-4 h-4 inline mr-2 text-blue-600" />
+                <Mail className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
                 Email Address *
               </label>
               <input
@@ -164,7 +167,16 @@ const RequestDemo = () => {
                   required
                   value={formData.company}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                  style={{ '--focus-ring': '#1e82c9', '--focus-border': '#1e82c9' }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#1e82c9';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(30, 130, 201, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                   placeholder="Your Company Inc."
                 />
               </div>
@@ -180,7 +192,16 @@ const RequestDemo = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                  style={{ '--focus-ring': '#1e82c9', '--focus-border': '#1e82c9' }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#1e82c9';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(30, 130, 201, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -229,11 +250,11 @@ const RequestDemo = () => {
         <div className="mt-8 text-center text-gray-600">
           <p>Or contact us directly:</p>
           <div className="flex justify-center space-x-6 mt-4">
-            <a href="mailto:demo@gmpdashboard.com" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
+            <a href="mailto:demo@gmpdashboard.com" className="flex items-center space-x-2 transition-colors" style={{ color: '#1e82c9' }} onMouseEnter={(e) => e.currentTarget.style.color = '#1a6fa8'} onMouseLeave={(e) => e.currentTarget.style.color = '#1e82c9'}>
               <Mail className="w-5 h-5" />
               <span>demo@gmpdashboard.com</span>
             </a>
-            <a href="tel:+15551234567" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
+            <a href="tel:+15551234567" className="flex items-center space-x-2 transition-colors" style={{ color: '#1e82c9' }} onMouseEnter={(e) => e.currentTarget.style.color = '#1a6fa8'} onMouseLeave={(e) => e.currentTarget.style.color = '#1e82c9'}>
               <Phone className="w-5 h-5" />
               <span>+1 (555) 123-4567</span>
             </a>
