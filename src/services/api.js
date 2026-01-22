@@ -138,20 +138,22 @@ export const fetchTrend483Data = async (programArea, system) => {
 };
 
 /**
- * Fetch observations and 483 warning letters for selected filters
+ * Fetch observations and 483 warning letters for selected filters with pagination
  * @param {string} programArea - Program area filter
  * @param {string} system - System filter
  * @param {number} year - Year filter
- * @param {number} limit - Maximum number of records to return
- * @returns {Promise<Array>}
+ * @param {number} page - Page number (default: 1)
+ * @param {number} pageSize - Number of records per page (default: 10)
+ * @returns {Promise<{data: Array, total: number, page: number, page_size: number, total_pages: number}>}
  */
-export const fetchTrend483Observations = async (programArea, system, year, limit = 50) => {
+export const fetchTrend483Observations = async (programArea, system, year, page = 1, pageSize = 10) => {
   try {
     const params = new URLSearchParams();
     if (programArea) params.append('program_area', programArea);
     if (system) params.append('system', system);
     if (year) params.append('year', year.toString());
-    params.append('limit', limit.toString());
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
     
     const response = await fetch(`${API_BASE_URL}/trend-483-observations?${params.toString()}`);
     if (!response.ok) {

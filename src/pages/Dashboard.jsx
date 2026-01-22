@@ -78,15 +78,18 @@ const Dashboard = () => {
   const [countrywiseCounts, setCountrywiseCounts] = useState([]);
   const [trend483Data, setTrend483Data] = useState([]);
   const [trend483Observations, setTrend483Observations] = useState([]);
+  const [trend483Pagination, setTrend483Pagination] = useState({ total: 0, page: 1, page_size: 10, total_pages: 0 });
   const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [loadingProgramAreas, setLoadingProgramAreas] = useState(true);
   const [loadingClassifications, setLoadingClassifications] = useState(true);
   const [loadingCountrywise, setLoadingCountrywise] = useState(true);
   const [loadingTrend, setLoadingTrend] = useState(false);
+  const [loadingObservations, setLoadingObservations] = useState(false);
   const [selectedProgramArea, setSelectedProgramArea] = useState('Drugs');
   const [selectedTrendProgramArea, setSelectedTrendProgramArea] = useState('Drugs');
   const [selectedTrendSystem, setSelectedTrendSystem] = useState('Production System');
   const [selectedTrendYear, setSelectedTrendYear] = useState(2022);
+  const [currentPage, setCurrentPage] = useState(1);
   const [hoveredCountry, setHoveredCountry] = useState(null);
 
   // Fetch total observations and total cites inspected from API
@@ -175,11 +178,17 @@ const Dashboard = () => {
   }, []);
 
   // Fetch trend 483 data when filters change
+  // Filters are applied in order: Program Area -> System -> Year (in backend)
   useEffect(() => {
     const fetchTrend = async () => {
       try {
         setLoadingTrend(true);
+        console.log('Fetching trend data with filters (applied in order: Program Area -> System):', {
+          programArea: selectedTrendProgramArea,
+          system: selectedTrendSystem
+        });
         const data = await fetchTrend483Data(selectedTrendProgramArea, selectedTrendSystem);
+        console.log('Trend data received:', data);
         setTrend483Data(data);
       } catch (error) {
         console.error('Error fetching trend 483 data:', error);
@@ -192,23 +201,78 @@ const Dashboard = () => {
     fetchTrend();
   }, [selectedTrendProgramArea, selectedTrendSystem]);
 
-  // Fetch trend 483 observations when filters change
+  // Fetch trend 483 observations when filters or page change
+  // Filters are applied in order: Program Area -> System -> Year (in backend)
   useEffect(() => {
     const fetchObservations = async () => {
       try {
-        const data = await fetchTrend483Observations(
+        setLoadingObservations(true);
+        console.log('Fetching observations with filters (applied in order: Program Area -> System -> Year):', {
+          programArea: selectedTrendProgramArea,
+          system: selectedTrendSystem,
+          year: selectedTrendYear,
+          page: currentPage
+        });
+        const response = await fetchTrend483Observations(
           selectedTrendProgramArea, 
           selectedTrendSystem, 
-          selectedTrendYear
+          selectedTrendYear,
+          currentPage,
+          10 // 10 records per page
         );
-        setTrend483Observations(data);
+        console.log('API Response:', response);
+        console.log('Response type:', Array.isArray(response) ? 'Array' : 'Object');
+        
+        // Handle both array response and object response
+        let observationsData = [];
+        let paginationInfo = { total: 0, page: 1, page_size: 10, total_pages: 0 };
+        
+        if (Array.isArray(response)) {
+          // If response is directly an array, use it directly
+          console.log('Response is an array, using directly. Length:', response.length);
+          observationsData = response;
+          paginationInfo = {
+            total: response.length,
+            page: currentPage,
+            page_size: 10,
+            total_pages: Math.ceil(response.length / 10)
+          };
+        } else if (response && response.data && Array.isArray(response.data)) {
+          // If response is an object with data property that is an array
+          console.log('Response is an object with data array. Length:', response.data.length);
+          observationsData = response.data;
+          // Use the total from backend (total count of all records)
+          const totalRecords = response.total || response.data.length;
+          paginationInfo = {
+            total: totalRecords,
+            page: response.page || currentPage,
+            page_size: response.page_size || 10,
+            total_pages: response.total_pages || Math.ceil(totalRecords / 10)
+          };
+        } else {
+          console.warn('Unexpected response format:', response);
+          observationsData = [];
+        }
+        
+        console.log('Final observations data length:', observationsData.length);
+        console.log('First observation:', observationsData[0]);
+        setTrend483Observations(observationsData);
+        setTrend483Pagination(paginationInfo);
       } catch (error) {
         console.error('Error fetching trend 483 observations:', error);
         setTrend483Observations([]);
+        setTrend483Pagination({ total: 0, page: 1, page_size: 10, total_pages: 0 });
+      } finally {
+        setLoadingObservations(false);
       }
     };
 
     fetchObservations();
+  }, [selectedTrendProgramArea, selectedTrendSystem, selectedTrendYear, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
   }, [selectedTrendProgramArea, selectedTrendSystem, selectedTrendYear]);
 
   // Prepare program area chart data
@@ -216,8 +280,8 @@ const Dashboard = () => {
     ? Object.entries(programAreaCounts)
         .filter(([name, value]) => value > 0)
         .map(([name, value]) => ({
-          name,
-          value
+    name,
+    value
         }))
         .sort((a, b) => b.value - a.value)
     : [];
@@ -238,9 +302,26 @@ const Dashboard = () => {
   const TREND_YEARS = [2022, 2023, 2024, 2025, 2026];
   
   // Get unique systems from trend data
-  const allSystems = Array.from(new Set(
+  // Define all available systems
+  const ALL_AVAILABLE_SYSTEMS = [
+    'Facilities and Equipment System',
+    'Laboratory Control System',
+    'Materials System',
+    'Packaging and Labeling System',
+    'Production System',
+    'Quality System'
+  ];
+
+  // Get systems from data and merge with predefined list
+  const systemsFromData = Array.from(new Set(
     trend483Observations.map(obs => obs.system).filter(Boolean)
   ));
+  
+  // Combine predefined systems with systems found in data (avoid duplicates)
+  const allSystems = Array.from(new Set([
+    ...ALL_AVAILABLE_SYSTEMS,
+    ...systemsFromData
+  ])).sort();
 
   // Use trend data from API
   const trendChartData = trend483Data.length > 0 
@@ -264,7 +345,8 @@ const Dashboard = () => {
   }
 
   // Use observations from API
-  const mappedObservationRows = trend483Observations || [];
+  // Use trend483Observations directly - it's already an array from the API
+  const mappedObservationRows = Array.isArray(trend483Observations) ? trend483Observations : [];
 
   // Get max values for dynamic heights (with safety checks)
   const maxProgramArea = programAreaData.length > 0 ? Math.max(...programAreaData.map(d => d.value)) : 0;
@@ -341,17 +423,17 @@ const Dashboard = () => {
       </div>
 
       <div className="py-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-10 animate-fade-in">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
-              <div>
-                <h1 className="text-5xl font-bold text-gray-900 mb-2 tracking-tight">FDA 483 Observations Trends</h1>
-                <p className="text-gray-600 text-xl">Comprehensive analysis of GMP inspection data (2007-2025)</p>
-              </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-10 animate-fade-in">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
+            <div>
+              <h1 className="text-5xl font-bold text-gray-900 mb-2 tracking-tight">FDA 483 Observations Trends</h1>
+              <p className="text-gray-600 text-xl">Comprehensive analysis of GMP inspection data (2007-2025)</p>
             </div>
           </div>
+        </div>
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
@@ -681,11 +763,9 @@ const Dashboard = () => {
                 onChange={(e) => setSelectedTrendSystem(e.target.value)}
                 className="input-field px-4 py-2 font-medium text-gray-700 bg-white border-2 border-gray-200 focus:border-emerald-400 focus:ring-emerald-400/20 cursor-pointer"
               >
-                {allSystems.length > 0 ? allSystems.map((system) => (
+                {allSystems.map((system) => (
                   <option key={system} value={system}>{system}</option>
-                )) : (
-                  <option value="Production System">Production System</option>
-                )}
+                ))}
               </select>
               <select
                 value={selectedTrendYear}
@@ -696,8 +776,8 @@ const Dashboard = () => {
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
-            </div>
           </div>
+        </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Summary cards for selected year */}
@@ -715,24 +795,24 @@ const Dashboard = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   Year: <span className="font-semibold text-gray-800">{selectedTrendYear}</span>
                 </p>
-              </div>
+            </div>
               <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 shadow-sm">
                 <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">
                   Observations &amp; 483&apos;s ({selectedTrendYear})
                 </p>
                 <div className="flex items-baseline space-x-6">
-                  <div>
+            <div>
                     <p className="text-xs text-gray-500 mb-1">Observations</p>
                     <p className="text-3xl font-bold text-gray-900">
                       {selectedYearData.observations.toLocaleString()}
                     </p>
-                  </div>
+            </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">483&apos;s Issued</p>
                     <p className="text-2xl font-bold text-emerald-700">
                       {selectedYearData.fda483s.toLocaleString()}
                     </p>
-                  </div>
+          </div>
                 </div>
                 <p className="mt-3 text-xs text-gray-600">
                   483 count represents warning letters mapped to FEI numbers for the selected filters. Not every observation
@@ -754,24 +834,24 @@ const Dashboard = () => {
 
             {/* Clean professional line chart for 2022-2026 trend */}
             <div className="md:col-span-2">
-              <div className="chart-container">
+            <div className="chart-container">
                 <ResponsiveContainer width="100%" height={340}>
                   <LineChart
                     data={trendChartData}
                     margin={{ top: 20, right: 40, left: 10, bottom: 40 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
                       dataKey="year"
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       tickFormatter={(v) => v}
-                    />
-                    <YAxis
-                      tick={{ fill: '#6b7280', fontSize: 12 }}
-                      domain={[0, 'dataMax']}
-                      tickFormatter={(value) => value.toLocaleString()}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
+                  />
+                  <YAxis 
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    domain={[0, 'dataMax']}
+                    tickFormatter={(value) => value.toLocaleString()}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Line
                       type="monotone"
@@ -793,11 +873,11 @@ const Dashboard = () => {
                       strokeDasharray="4 4"
                     />
                   </LineChart>
-                </ResponsiveContainer>
-              </div>
+              </ResponsiveContainer>
             </div>
           </div>
-        </div>
+                </div>
+                </div>
 
         {/* Sample Observations & 483 Warning Letters Mapped by FEI */}
         <div className="card mb-10 card-hover">
@@ -805,7 +885,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-sky-500 rounded-xl flex items-center justify-center shadow-lg">
                 <FileText className="w-6 h-6 text-white" />
-              </div>
+                  </div>
               <div>
                 <h2 className="text-3xl font-bold text-gray-900">
                   Observations &amp; 483 Warning Letters (FEI Mapping)
@@ -816,61 +896,83 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="hidden md:block text-xs text-gray-500">
-              Limited to first 50 records for display.
+              {loadingObservations ? (
+                <span>Loading...</span>
+              ) : trend483Pagination.total > 0 ? (
+                <span>
+                  Showing {((currentPage - 1) * trend483Pagination.page_size) + 1} - {Math.min(currentPage * trend483Pagination.page_size, trend483Pagination.total)} of {trend483Pagination.total} records
+                </span>
+              ) : (
+                <span>No records found</span>
+              )}
             </div>
-          </div>
+              </div>
 
           <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <table className="w-full divide-y divide-gray-200 text-sm" style={{ tableLayout: 'auto' }}>
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">FEI Number</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Legal Name</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Program Area</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">System</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Inspection End Date</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Act/CFR Number</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Short Description</th>
-                  <th className="px-4 py-2 text-left font-semibold text-gray-700">483 Warning Letter</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">FEI Number</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[200px]">Legal Name</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Program Area</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[150px]">System</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[130px]">Inspection End Date</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[150px]">Act/CFR Number</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[250px]">Short Description</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[350px]">Long Description</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[180px]">483 Warning Letter</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {mappedObservationRows.length === 0 && (
+                {loadingObservations && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500 text-sm">
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500 text-sm">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-2">Loading records...</span>
+          </div>
+                    </td>
+                  </tr>
+                )}
+                {!loadingObservations && mappedObservationRows.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500 text-sm">
                       No records found for the selected combination. Try a different year, program area, or system.
                     </td>
                   </tr>
                 )}
-                {mappedObservationRows.map((row, index) => (
+                {!loadingObservations && mappedObservationRows.map((row, index) => (
                   <tr key={`${row.inspectionId || row.feiNumber}-${index}`} className="hover:bg-blue-50/40 transition-colors">
-                    <td className="px-4 py-2 whitespace-nowrap font-mono text-xs text-gray-900">
-                      {row.feiNumber}
+                    <td className="px-4 py-3 font-mono text-sm text-gray-900 break-words">
+                      {row.feiNumber || '—'}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-gray-800">
+                    <td className="px-4 py-3 text-gray-800 break-words">
                       {row.companyName || row.LegalName || '—'}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                      {row.programArea}
+                    <td className="px-4 py-3 text-gray-700 break-words">
+                      {row.programArea || '—'}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                      {row.system}
+                    <td className="px-4 py-3 text-gray-700 break-words">
+                      {row.system || '—'}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                    <td className="px-4 py-3 text-gray-700">
                       {row.inspectionEndDate
                         ? new Date(row.inspectionEndDate).toLocaleDateString()
                         : '—'}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                    <td className="px-4 py-3 text-gray-700 break-words">
                       {row.cfrNumber || row.ActCFRNumber || '—'}
                     </td>
-                    <td className="px-4 py-2 text-gray-700 max-w-xs">
-                      <div className="line-clamp-2">{row.shortDescription || '—'}</div>
+                    <td className="px-4 py-3 text-gray-700 break-words">
+                      <div className="whitespace-normal">{row.shortDescription || '—'}</div>
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-700 break-words">
+                      <div className="whitespace-normal">{row.longDescription || '—'}</div>
+                    </td>
+                    <td className="px-4 py-3">
                       {row.warningLetter ? (
                         <div className="flex flex-col text-xs text-gray-700">
-                          <span className="font-semibold text-emerald-700">
+                          <span className="font-semibold text-emerald-700 break-words">
                             {row.warningLetter.recordId}
                           </span>
                           {row.warningLetter.download && (
@@ -878,13 +980,13 @@ const Dashboard = () => {
                               href={row.warningLetter.download}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-blue-600 hover:text-blue-800 underline mb-1"
+                              className="text-blue-600 hover:text-blue-800 underline mb-1 break-all"
                             >
                               View 483 Letter
                             </a>
                           )}
                           {row.warningLetter.recordDate && (
-                            <span>
+                            <span className="break-words">
                               Record Date:{' '}
                               {new Date(row.warningLetter.recordDate).toLocaleDateString()}
                             </span>
@@ -898,7 +1000,45 @@ const Dashboard = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+        </div>
+
+          {/* Pagination Controls */}
+          {trend483Pagination.total_pages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || loadingObservations}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === 1 || loadingObservations
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Previous
+                </button>
+                
+                <span className="px-4 py-2 text-sm text-gray-700">
+                  Page {currentPage} of {trend483Pagination.total_pages}
+                </span>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(trend483Pagination.total_pages, prev + 1))}
+                  disabled={currentPage === trend483Pagination.total_pages || loadingObservations}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === trend483Pagination.total_pages || loadingObservations
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * trend483Pagination.page_size) + 1} - {Math.min(currentPage * trend483Pagination.page_size, trend483Pagination.total)} of {trend483Pagination.total} records
+              </div>
+            </div>
+          )}
         </div>
       </div>
       </div>
