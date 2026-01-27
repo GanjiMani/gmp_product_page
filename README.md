@@ -68,8 +68,6 @@ gmp_dashboard/
 ├── src/
 │   ├── components/
 │   │   └── Navbar.jsx          # Navigation component
-│   ├── data/
-│   │   └── dummyData.js        # Data generator and aggregations
 │   ├── pages/
 │   │   ├── Home.jsx            # Home page with GMP info
 │   │   ├── Dashboard.jsx       # Main analytics dashboard
@@ -86,11 +84,8 @@ gmp_dashboard/
 
 ## Data Overview
 
-The dashboard uses dummy data representing:
-- **261,811** total observations
-- **2007-2025** date range
-- **7 Program Areas**: Drugs, Food, Cosmetics, Biologics, Medical Devices, Veterinary, Tobacco
-- **6 cGMP Systems**: Quality System, Laboratory Control System, Material System, Packaging and Labeling System, Production System, Facilities & Equipment System
+The dashboard is designed to work with **real inspection data** served from a backend API (FastAPI + SQL Server).  
+Key metrics and charts (total observations, total cites inspected, observations by program area, inspection classifications, country-wise counts, and the Program Area / System Year-wise 483 trend) are all driven by backend routes and database tables, not by dummy data.
 
 ## Features in Detail
 
@@ -115,13 +110,6 @@ The dashboard uses dummy data representing:
 
 ### Colors
 Edit `tailwind.config.js` to customize the color scheme.
-
-### Data
-Modify `src/data/dummyData.js` to:
-- Change the number of observations
-- Add/remove program areas
-- Modify date ranges
-- Customize inspector names
 
 ## Browser Support
 

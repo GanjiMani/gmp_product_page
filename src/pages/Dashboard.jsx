@@ -5,6 +5,7 @@ import {
   fetchProgramAreaCounts,
   fetchInspectionClassifications,
   fetchCountrywiseCounts,
+  fetchTrend483AvailableFilters,
   fetchTrend483Data,
   fetchTrend483Observations
 } from '../services/api';
@@ -85,6 +86,9 @@ const Dashboard = () => {
   const [loadingCountrywise, setLoadingCountrywise] = useState(true);
   const [loadingTrend, setLoadingTrend] = useState(false);
   const [loadingObservations, setLoadingObservations] = useState(false);
+  const [availableTrendProgramAreas, setAvailableTrendProgramAreas] = useState([]);
+  const [availableTrendSystems, setAvailableTrendSystems] = useState([]);
+  const [availableTrendYears, setAvailableTrendYears] = useState([]);
   const [selectedProgramArea, setSelectedProgramArea] = useState('Drugs');
   const [selectedTrendProgramArea, setSelectedTrendProgramArea] = useState('Drugs');
   const [selectedTrendSystem, setSelectedTrendSystem] = useState('Production System');
@@ -175,6 +179,24 @@ const Dashboard = () => {
     };
 
     fetchCountrywise();
+  }, []);
+
+  // Fetch available filters for 483 trend (program areas, systems, years)
+  useEffect(() => {
+    const fetchAvailableFilters = async () => {
+      try {
+        const filters = await fetchTrend483AvailableFilters();
+        setAvailableTrendProgramAreas(filters.program_areas || []);
+        setAvailableTrendSystems(filters.systems || []);
+        // Sort years ascending for a natural dropdown order
+        const years = Array.isArray(filters.years) ? [...filters.years].sort((a, b) => a - b) : [];
+        setAvailableTrendYears(years);
+      } catch (error) {
+        console.error('Error fetching trend 483 available filters:', error);
+      }
+    };
+
+    fetchAvailableFilters();
   }, []);
 
   // Fetch trend 483 data when filters change
@@ -298,12 +320,13 @@ const Dashboard = () => {
   // Prepare country data
   const countryData = countrywiseCounts || [];
 
-  // Program Area + System + Year-wise 483/Observation data (2022-2026)
-  const TREND_YEARS = [2022, 2023, 2024, 2025, 2026];
+  // Program Area + System + Year-wise 483/Observation data
+  // Prefer backend-provided years; fall back to 2022–2026 if not available
+  const DEFAULT_TREND_YEARS = [2022, 2023, 2024, 2025, 2026];
+  const TREND_YEARS = availableTrendYears.length > 0 ? availableTrendYears : DEFAULT_TREND_YEARS;
   
-  // Get unique systems from trend data
-  // Define all available systems
-  const ALL_AVAILABLE_SYSTEMS = [
+  // Systems for trend filters – prefer backend-provided list
+  const ALL_AVAILABLE_SYSTEMS_FALLBACK = [
     'Facilities and Equipment System',
     'Laboratory Control System',
     'Materials System',
@@ -312,16 +335,9 @@ const Dashboard = () => {
     'Quality System'
   ];
 
-  // Get systems from data and merge with predefined list
-  const systemsFromData = Array.from(new Set(
-    trend483Observations.map(obs => obs.system).filter(Boolean)
-  ));
-  
-  // Combine predefined systems with systems found in data (avoid duplicates)
-  const allSystems = Array.from(new Set([
-    ...ALL_AVAILABLE_SYSTEMS,
-    ...systemsFromData
-  ])).sort();
+  const allSystems = availableTrendSystems.length > 0
+    ? availableTrendSystems
+    : ALL_AVAILABLE_SYSTEMS_FALLBACK;
 
   // Use trend data from API
   const trendChartData = trend483Data.length > 0 
@@ -891,7 +907,7 @@ const Dashboard = () => {
                   Observations &amp; 483 Warning Letters (FEI Mapping)
                 </h2>
                 <p className="text-gray-500 text-sm mt-1">
-                  Showing sample of observations and their mapped 483 warning letters for the selected program area, system, and year.
+                  Showing observations and their mapped 483 warning letters for the selected program area, system, and year (from the backend database).
                 </p>
               </div>
             </div>
