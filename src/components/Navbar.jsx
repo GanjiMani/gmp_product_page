@@ -9,8 +9,10 @@ const Navbar = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { path: '/investigators', label: 'Investigator Details', icon: Search }, // new button
     { path: '/observation-analysis', label: 'Analysis', icon: Search },
     { path: '/request-demo', label: 'Request a Demo', icon: Calendar },
+
   ];
 
   return (

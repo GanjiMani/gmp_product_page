@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
+import Investigator from './pages/Investigator';
 import RequestDemo from './pages/RequestDemo';
 import Login from './pages/Login';
 import ObservationAnalysis from './pages/ObservationAnalysis';
@@ -16,6 +17,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/investigators" element={<Investigator />} />
         <Route path="/request-demo" element={<RequestDemo />} />
         <Route path="/login" element={<Login />} />
         <Route path="/observation-analysis" element={<ObservationAnalysis />} />

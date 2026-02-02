@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, FileText, TrendingUp, AlertCircle, CheckCircle, Download, Filter } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 const PROGRAM_AREAS = ['Drugs', 'Food', 'Cosmetics', 'Biologics', 'Medical Devices', 'Veterinary', 'Tobacco'];
 const SYSTEMS = [
@@ -11,16 +12,7 @@ const SYSTEMS = [
   'Facilities & Equipment System'
 ];
 
-const ESTABLISHMENTS = [
-  'API Manufacturer',
-  'Outsourcing Facility',
-  'Sterile Drug Manufacturer',
-  'Drug Product Manufacturer',
-  'Blood Bank',
-  'Producer of sterile drugs',
-  'Sprout Grower',
-  'Human and Veterinarian Drug Manufacturer'
-];
+
 
 // Dummy CFR citations mapping
 const CFR_CITATIONS = {
@@ -125,47 +117,51 @@ const generateSearchResults = (observation, programArea, system) => {
 const ObservationAnalysis = () => {
   const [programArea, setProgramArea] = useState('');
   const [system, setSystem] = useState('');
-  const [establishment, setEstablishment] = useState(''); 
   const [observation, setObservation] = useState('');
+  const navigate = useNavigate();
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [expandedCapa, setExpandedCapa] = useState(null);
   const [expandedObservations, setExpandedObservations] = useState(null);
 
   const handleSearch = (e) => {
-    e.preventDefault();
-    
-    if (!programArea || !system || !establishment || !observation.trim()) {
-      alert('Please fill in all fields before searching.');
-      return;
-    }
+   e.preventDefault();
 
-    setIsSearching(true);
+  if (!programArea || !system || !observation.trim()) {
+    alert("Please fill in all fields before searching.");
+    return;
+  }
+  // 👉 Redirect to Request Demo page
+  navigate("/request-demo");
+};
+
+  
+  //   setIsSearching(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const results = generateSearchResults(observation, programArea, system);
-      setSearchResults(results);
-      setIsSearching(false);
-    }, 1500);
-  };
+  //   // Simulate API call
+  //   setTimeout(() => {
+  //     const results = generateSearchResults(observation, programArea, system);
+  //     setSearchResults(results);
+  //     setIsSearching(false);
+  //   }, 1500);
+  // };
 
   const handleReset = () => {
-    setProgramArea('');
-    setSystem('');
-    setEstablishment('');
-    setObservation('');
-    setSearchResults(null);
-    setExpandedCapa(null);
-    setExpandedObservations(null);
-  };
+  setProgramArea('');
+  setSystem('');
+  setObservation('');
+  setSearchResults(null);
+  setExpandedCapa(null);
+  setExpandedObservations(null);
+};
 
   const handleExport = () => {
     // Simulate export functionality
     alert('Export functionality will be implemented. This would export the search results to PDF/Excel.');
-  };
+   };
 
   return (
+
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -191,8 +187,8 @@ const ObservationAnalysis = () => {
             </div>
           </div>
 
+         <div className="grid md:grid-cols-2 gap-6"></div>
           <form onSubmit={handleSearch} className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
               {/* Program Area Dropdown */}
               <div>
                 <label htmlFor="programArea" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -232,31 +228,6 @@ const ObservationAnalysis = () => {
                   ))}
                 </select>
               </div>
-              {/* Establishment Dropdown */}
-              <div>
-                <label
-                  htmlFor="establishment"
-                  className="block text-sm font-semibold text-gray-700 mb-2"
-                >
-                  <Filter className="w-4 h-4 inline mr-2" style={{ color: '#1e82c9' }} />
-                  Establishment *
-                </label>
-                <select
-                  id="establishment"
-                  value={establishment}
-                  onChange={(e) => setEstablishment(e.target.value)}
-                  className="input-field"
-                  required
-                >
-                  <option value="">Select Establishment</option>
-                  {ESTABLISHMENTS.map((est) => (
-                    <option key={est} value={est}>
-                      {est}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
             {/* Observation Text Area */}
             <div>
@@ -576,7 +547,7 @@ const ObservationAnalysis = () => {
       </div>
     </div>
   );
-};
 
+}
 export default ObservationAnalysis;
 

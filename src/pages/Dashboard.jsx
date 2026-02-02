@@ -904,7 +904,7 @@ const Dashboard = () => {
                   </div>
               <div>
                 <h2 className="text-3xl font-bold text-gray-900">
-                  Observations &amp; 483 Warning Letters (FEI Mapping)
+                  Observations &amp; 483's (FEI Mapping)
                 </h2>
                 <p className="text-gray-500 text-sm mt-1">
                   Showing observations and their mapped 483 warning letters for the selected program area, system, and year (from the backend database).

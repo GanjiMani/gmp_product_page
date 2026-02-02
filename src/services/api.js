@@ -211,3 +211,19 @@ export const fetchTrend483Observations = async (programArea, system, year, page 
     throw error;
   }
 };
+
+// src/services/investigatorApi.js
+const BASE_URL = 'https://iidevgmpcomplianceai.azurewebsites.net/api';
+
+export const fetchTotalInvestigators = async () => {
+  const res = await fetch(`${BASE_URL}/total-investigators`);
+  if (!res.ok) throw new Error('Failed to fetch total investigators');
+  return res.json();
+};
+
+export const fetchInvestigators = async (name) => {
+  const url = name ? `${BASE_URL}/investigators?name=${encodeURIComponent(name)}` : `${BASE_URL}/investigators`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch investigators');
+  return res.json();
+};
