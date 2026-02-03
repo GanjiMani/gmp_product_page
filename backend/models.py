@@ -62,3 +62,16 @@ class ObservationsAlongWith483(Base):
     Matched_FEI_Number = Column(String(50), nullable=True, index=True)
     Matched_Record_Date = Column(Date, nullable=True)
     DownloadURL = Column(String(1000), nullable=True)
+
+class CAPARecord(Base):
+    __tablename__ = "CAPARecords"
+    __table_args__ = {"schema": "dbo"}
+
+    obs_id = Column(String(20), primary_key=True)
+    Act_CFR_Number = Column(String(255))
+    Long_Description = Column(Text)
+    Immediate_Actions = Column(Text)
+    Extensive_Investigation_Probable_Contributing_Factors = Column(Text)
+    Corrective_Actions = Column(Text)
+    Preventive_Actions = Column(Text)
+    CAPA_Effectiveness_Monitoring = Column(Text)
